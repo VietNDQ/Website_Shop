@@ -24,13 +24,15 @@ class MaGiamGia extends Model
         'ngay_ket_thuc',
         'gioi_han_su_dung',
         'so_lan_da_dung',
+        'dang_hoat_dong',
     ];
 
     protected function casts(): array
     {
         return [
-            'ngay_bat_dau' => 'datetime',
-            'ngay_ket_thuc' => 'datetime',
+            'ngay_bat_dau'   => 'datetime',
+            'ngay_ket_thuc'  => 'datetime',
+            'dang_hoat_dong' => 'boolean',
         ];
     }
 }

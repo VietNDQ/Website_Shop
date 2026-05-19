@@ -27,7 +27,7 @@ const routes = [
         meta: { layout: 'default' }
     },
     {
-        path: '/admin',
+        path: '/nhan-vien',
         component: () => import('../layout/wrapper/client_admin.vue'),
         children: [
             { path: 'dashboard', component: () => import('../components/Admin/Dashboard.vue'), meta: { title: 'Dashboard' } },

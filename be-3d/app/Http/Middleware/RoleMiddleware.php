@@ -19,6 +19,8 @@ class RoleMiddleware
             'quan_tri' => 1,
             'quan_ly'  => 2,
             'khach_hang' => 3,
+            'nhan_vien_kho' => 4,
+            'nhan_vien_ban_hang' => 5,
         ];
 
         // Chuyển đổi các role truyền vào từ tên sang số nếu cần

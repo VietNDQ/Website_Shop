@@ -4,7 +4,7 @@
     <div class="nav-inner">
       <!-- Logo -->
       <a href="#" class="nav-logo">
-        SKYLINE
+        BALAB
         <div class="nav-logo-s">
           <svg
             width="14"
@@ -144,9 +144,9 @@ export default {
     return {
       // Giả lập trạng thái đăng nhập
       isLoggedIn: false,
-      userName: 'Việt'
+      userName: "Việt",
     };
-  }
+  },
 };
 </script>
 <style></style>

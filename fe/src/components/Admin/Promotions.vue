@@ -27,6 +27,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Flash Sale
       </button>
+      <button class="cus-tab" :class="{ active: tab === 'history' }" @click="switchToHistory">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Lịch sử
+      </button>
     </div>
 
     <!-- Coupon tab -->
@@ -91,6 +95,71 @@
       </table>
       <div class="table-footer">
         <span class="table-count">{{ filteredCoupons.length }} mã giảm giá</span>
+      </div>
+    </div>
+
+    <!-- History tab -->
+    <div v-if="tab === 'history'" class="card">
+      <div class="table-toolbar">
+        <div class="search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" v-model="historySearch" placeholder="Tìm theo tên thao tác, người dùng..." />
+        </div>
+        <div class="toolbar-right">
+          <select class="sel" v-model="historyFilter">
+            <option value="">Tất cả</option>
+            <option value="coupon">Mã giảm giá</option>
+            <option value="flash">Flash Sale</option>
+          </select>
+          <button class="btn-ghost" style="padding:7px 14px;font-size:12.5px" @click="fetchHistory">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 101.85-4.28L1 10"/></svg>
+            Làm mới
+          </button>
+        </div>
+      </div>
+
+      <div v-if="historyLoading" style="text-align:center;padding:40px;color:#94a3b8">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
+        <p style="margin-top:10px;font-size:13px">Đang tải lịch sử...</p>
+      </div>
+
+      <table v-else class="data-table">
+        <thead>
+          <tr>
+            <th style="width:46px">#</th>
+            <th>Thao tác</th>
+            <th>Loại</th>
+            <th>Người thực hiện</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(log, idx) in filteredHistory" :key="log.id">
+            <td style="color:#94a3b8;font-size:12px">{{ idx + 1 }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="history-dot" :style="{ background: log.color }"></span>
+                <span>{{ log.action }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="status-pill" :class="log.kind === 'flash' ? 's-pending' : 's-delivered'" style="font-size:11px;padding:2px 10px">
+                {{ log.kind === 'flash' ? '⚡ Flash Sale' : '🏷️ Mã giảm giá' }}
+              </span>
+            </td>
+            <td style="font-size:13px">{{ log.user }}</td>
+            <td style="font-size:12px;color:#64748b">{{ log.time }}</td>
+          </tr>
+          <tr v-if="filteredHistory.length === 0">
+            <td colspan="5" style="text-align:center;color:#94a3b8;padding:36px">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px;opacity:.4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <p style="margin:0;font-size:13px">Chưa có lịch sử hoạt động nào.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-footer">
+        <span class="table-count">{{ filteredHistory.length }} bản ghi</span>
       </div>
     </div>
 
@@ -235,71 +304,254 @@
 </template>
 
 <script>
+import axios from 'axios';
+
+const BASE = 'http://127.0.0.1:8000/api/quan-ly';
+
 export default {
   name: 'AdminPromotions',
   data() {
     return {
       tab: 'coupon',
+      // ── Coupon ──────────────────────────────
       showModal: false,
       modalMode: 'add',
       couponSearch: '',
       couponFilterStatus: '',
+      couponLoading: false,
       couponForm: {
-        code: '',
-        type: 'Phần trăm',
-        value: '',
-        minOrder: '',
-        used: 0,
-        limit: 100,
-        expiry: '',
-        active: true
+        code: '', type: 'Phần trăm', value: '',
+        minOrder: '', limit: 100, expiry: '', active: true,
       },
-      coupons: [
-        { code: 'SALE20', type: 'Phần trăm', value: 20, minOrder: 200000, used: 48, limit: 100, expiry: '2026-05-31', active: true },
-        { code: 'GIAM50K', type: 'Số tiền cố định', value: 50000, minOrder: 500000, used: 100, limit: 100, expiry: '2026-05-20', active: false },
-        { code: 'VIP30', type: 'Phần trăm', value: 30, minOrder: 1000000, used: 12, limit: 50, expiry: '2026-06-30', active: true },
-      ],
+      coupons: [],
+      // ── Flash Sale ───────────────────────────
       showFlashModal: false,
       flashModalMode: 'add',
+      flashLoading: false,
       flashForm: {
-        id: null,
-        name: '',
-        emoji: '🤖',
-        discount: 10,
-        oldPrice: '',
-        newPrice: 0,
-        timeLeft: '2g 30p'
+        id: null, name: '', emoji: '⚡',
+        discount: 10, oldPrice: '', newPrice: 0, timeLeft: '2g 00p',
       },
-      flashSales: [
-        { id: 1, name: 'Gundam RX-78-2 MG', emoji: '🤖', discount: 20, newPrice: 1000000, oldPrice: 1250000, timeLeft: '2g 30p' },
-        { id: 2, name: 'Iron Man MK50', emoji: '🦾', discount: 15, newPrice: 2975000, oldPrice: 3500000, timeLeft: '5g 10p' },
+      flashSales: [],
+      navItems: [
+        { key: 'store', label: 'Thông tin cửa hàng', icon: '' },
+        { key: 'shipping', label: 'Vận chuyển', icon: '' },
+        { key: 'payment', label: 'Thanh toán', icon: '' },
       ],
+      // ── Lịch sử ────────────────────────
+      historySearch: '',
+      historyFilter: '',
+      historyLoading: false,
+      historyLogs: [],
     };
   },
   computed: {
     filteredCoupons() {
       return this.coupons.filter(c => {
-        const matchSearch = !this.couponSearch || c.code.toLowerCase().includes(this.couponSearch.toLowerCase());
-        
+        const matchSearch = !this.couponSearch ||
+          c.code.toLowerCase().includes(this.couponSearch.toLowerCase());
+        const now = new Date(); now.setHours(0, 0, 0, 0);
+        const isExpired = c.expiry ? new Date(c.expiry) < now : false;
         let matchStatus = true;
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const expiryDate = new Date(c.expiry);
-        const isExpired = expiryDate < now;
-        
-        if (this.couponFilterStatus === 'active') {
-          matchStatus = c.active && !isExpired;
-        } else if (this.couponFilterStatus === 'expired') {
-          matchStatus = isExpired;
-        } else if (this.couponFilterStatus === 'inactive') {
-          matchStatus = !c.active;
-        }
-        
+        if (this.couponFilterStatus === 'active')   matchStatus = c.active && !isExpired;
+        if (this.couponFilterStatus === 'expired')  matchStatus = isExpired;
+        if (this.couponFilterStatus === 'inactive') matchStatus = !c.active;
         return matchSearch && matchStatus;
       });
-    }
+    },
+    filteredHistory() {
+      return this.historyLogs.filter(log => {
+        const q = this.historySearch.toLowerCase();
+        const matchSearch = !q ||
+          log.action.toLowerCase().includes(q) ||
+          (log.user || '').toLowerCase().includes(q);
+        const matchKind = !this.historyFilter || log.kind === this.historyFilter;
+        return matchSearch && matchKind;
+      });
+    },
+  },
+  mounted() {
+    this.fetchCoupons();
+    this.fetchFlashSales();
   },
   methods: {
+    /* ── Auth header ─────────────────────────── */
+    getConfig() {
+      return { headers: { Authorization: 'Bearer ' + localStorage.getItem('token_admin') } };
+    },
+
+    /* ── Lịch sử API ─────────────────────────── */
+    switchToHistory() {
+      this.tab = 'history';
+      if (this.historyLogs.length === 0) this.fetchHistory();
+    },
+    async fetchHistory() {
+      this.historyLoading = true;
+      try {
+        const res = await axios.get(`${BASE}/khuyen-mai/lich-su`, this.getConfig());
+        if (res.data.status) this.historyLogs = res.data.data;
+      } catch (e) { console.error('fetchHistory:', e); }
+      finally { this.historyLoading = false; }
+    },
+
+    /* ── Coupon API ──────────────────────────── */
+    async fetchCoupons() {
+      try {
+        const res = await axios.get(`${BASE}/khuyen-mai/coupon`, this.getConfig());
+        if (res.data.status) this.coupons = res.data.data;
+      } catch (e) { console.error('fetchCoupons:', e); }
+    },
+
+    openCouponModal(mode, coupon = null) {
+      this.modalMode = mode;
+      if (coupon) {
+        this.couponForm = {
+          code: coupon.code, type: coupon.type, value: coupon.value,
+          minOrder: coupon.minOrder, limit: coupon.limit,
+          expiry: coupon.expiry || '', active: coupon.active,
+        };
+      } else {
+        this.couponForm = {
+          code: '', type: 'Phần trăm', value: '', minOrder: '', limit: 100,
+          expiry: new Date(Date.now() + 30 * 864e5).toISOString().split('T')[0],
+          active: true,
+        };
+      }
+      this.showModal = true;
+    },
+
+    async saveCoupon() {
+      if (!this.couponForm.code || !this.couponForm.value) {
+        this.showToast('Vui lòng nhập đầy đủ mã voucher và giá trị giảm!', 'error'); return;
+      }
+      this.couponLoading = true;
+      try {
+        let res;
+        if (this.modalMode === 'add') {
+          res = await axios.post(`${BASE}/khuyen-mai/coupon/create`, this.couponForm, this.getConfig());
+        } else {
+          res = await axios.post(
+            `${BASE}/khuyen-mai/coupon/${this.couponForm.code}/update`,
+            this.couponForm, this.getConfig()
+          );
+        }
+        if (res.data.status) {
+          this.showToast(res.data.message, this.modalMode === 'add' ? 'success' : 'info');
+          await this.fetchCoupons();
+          this.showModal = false;
+        } else {
+          this.showToast(res.data.message || 'Lỗi lưu mã giảm giá!', 'error');
+        }
+      } catch (e) {
+        const msg = e.response?.data?.message || 'Có lỗi xảy ra!';
+        this.showToast(msg, 'error');
+      } finally { this.couponLoading = false; }
+    },
+
+    confirmDeleteCoupon(coupon) {
+      window.Swal.fire({
+        title: 'XÓA MÃ GIẢM GIÁ NÀY?',
+        html: `Bạn có chắc chắn muốn xóa mã <b style="color:#D70018">"${coupon.code}"</b>?<br><span style="font-size:13px;color:#64748b">Hành động này không thể hoàn tác.</span>`,
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#D70018', cancelButtonColor: '#f1f5f9',
+        confirmButtonText: 'Xác nhận xóa', cancelButtonText: 'Hủy bỏ',
+        background: '#ffffff', color: '#0f172a',
+        customClass: { popup: 'swal-premium-popup', confirmButton: 'btn-swal-confirm', cancelButton: 'btn-swal-cancel' },
+        buttonsStyling: false,
+      }).then(async result => {
+        if (!result.isConfirmed) return;
+        try {
+          await axios.delete(`${BASE}/khuyen-mai/coupon/${coupon.code}`, this.getConfig());
+          this.showToast('Xóa mã giảm giá thành công!', 'danger');
+          await this.fetchCoupons();
+        } catch (e) { this.showToast('Lỗi khi xóa mã giảm giá!', 'error'); }
+      });
+    },
+
+    /* ── Flash Sale API ──────────────────────── */
+    async fetchFlashSales() {
+      try {
+        const res = await axios.get(`${BASE}/khuyen-mai/flash-sale`, this.getConfig());
+        if (res.data.status) this.flashSales = res.data.data;
+      } catch (e) { console.error('fetchFlashSales:', e); }
+    },
+
+    openFlashModal(mode, flash = null) {
+      this.flashModalMode = mode;
+      if (flash) {
+        this.flashForm = {
+          id: flash.id, name: flash.name, emoji: flash.emoji,
+          discount: flash.discount, oldPrice: flash.oldPrice,
+          newPrice: flash.newPrice, timeLeft: flash.timeLeft,
+        };
+      } else {
+        this.flashForm = { id: null, name: '', emoji: '⚡', discount: 10, oldPrice: '', newPrice: 0, timeLeft: '2g 00p' };
+      }
+      this.showFlashModal = true;
+    },
+
+    calcFlashNewPrice() {
+      if (this.flashForm.oldPrice && this.flashForm.discount) {
+        this.flashForm.newPrice = Math.round(this.flashForm.oldPrice * (1 - this.flashForm.discount / 100));
+      } else {
+        this.flashForm.newPrice = this.flashForm.oldPrice || 0;
+      }
+    },
+
+    async saveFlashSale() {
+      if (!this.flashForm.name || !this.flashForm.oldPrice || !this.flashForm.discount) {
+        this.showToast('Vui lòng điền đầy đủ thông tin bắt buộc!', 'error'); return;
+      }
+      this.calcFlashNewPrice();
+      this.flashLoading = true;
+      try {
+        let res;
+        if (this.flashModalMode === 'add') {
+          res = await axios.post(`${BASE}/khuyen-mai/flash-sale/create`, this.flashForm, this.getConfig());
+        } else {
+          res = await axios.post(
+            `${BASE}/khuyen-mai/flash-sale/${this.flashForm.id}/update`,
+            this.flashForm, this.getConfig()
+          );
+        }
+        if (res.data.status) {
+          this.showToast(res.data.message, this.flashModalMode === 'add' ? 'success' : 'info');
+          await this.fetchFlashSales();
+          this.showFlashModal = false;
+        } else {
+          this.showToast(res.data.message || 'Lỗi lưu Flash Sale!', 'error');
+        }
+      } catch (e) {
+        this.showToast(e.response?.data?.message || 'Có lỗi xảy ra!', 'error');
+      } finally { this.flashLoading = false; }
+    },
+
+    stopFlashSale(flash) {
+      window.Swal.fire({
+        title: 'DỪNG FLASH SALE?',
+        html: `Bạn có muốn dừng Flash Sale của <b style="color:#D70018">"${flash.name}"</b>?<br><span style="font-size:13px;color:#64748b">Hành động này sẽ gỡ sản phẩm khỏi danh sách đang chạy.</span>`,
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#D70018', cancelButtonColor: '#f1f5f9',
+        confirmButtonText: 'Xác nhận dừng', cancelButtonText: 'Hủy bỏ',
+        background: '#ffffff', color: '#0f172a',
+        customClass: { popup: 'swal-premium-popup', confirmButton: 'btn-swal-confirm', cancelButton: 'btn-swal-cancel' },
+        buttonsStyling: false,
+      }).then(async result => {
+        if (!result.isConfirmed) return;
+        try {
+          await axios.delete(`${BASE}/khuyen-mai/flash-sale/${flash.id}`, this.getConfig());
+          this.showToast('Đã dừng Flash Sale thành công!', 'danger');
+          await this.fetchFlashSales();
+        } catch (e) { this.showToast('Lỗi khi dừng Flash Sale!', 'error'); }
+      });
+    },
+
+    /* ── Helpers ─────────────────────────────── */
+    isCouponExpired(coupon) {
+      if (!coupon.expiry) return false;
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      return new Date(coupon.expiry) < now;
+    },
     formatPrice(value) {
       if (value === null || value === undefined || value === '') return '0 ₫';
       if (typeof value === 'string') return value;
@@ -309,202 +561,15 @@ export default {
       if (!dateStr) return '';
       if (dateStr.includes('/')) return dateStr;
       const parts = dateStr.split('-');
-      if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
-      }
-      return dateStr;
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
     },
-    isCouponExpired(coupon) {
-      if (!coupon.expiry) return false;
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      const expiry = new Date(coupon.expiry);
-      return expiry < now;
+    showToast(message, type = 'success') {
+      if (type === 'success')            this.$toast.success(message);
+      else if (type === 'danger' || type === 'error') this.$toast.error(message);
+      else if (type === 'warning')       this.$toast.warning(message);
+      else                               this.$toast.info(message);
     },
-    openCouponModal(mode, coupon = null) {
-      this.modalMode = mode;
-      if (coupon) {
-        this.couponForm = {
-          code: coupon.code,
-          type: coupon.type,
-          value: coupon.value,
-          minOrder: coupon.minOrder,
-          used: coupon.used,
-          limit: coupon.limit,
-          expiry: coupon.expiry,
-          active: coupon.active
-        };
-      } else {
-        this.couponForm = {
-          code: '',
-          type: 'Phần trăm',
-          value: '',
-          minOrder: '',
-          used: 0,
-          limit: 100,
-          expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          active: true
-        };
-      }
-      this.showModal = true;
-    },
-    saveCoupon() {
-      if (!this.couponForm.code || !this.couponForm.value) {
-        this.showToast('Vui lòng nhập đầy đủ mã voucher và giá trị giảm!', 'error');
-        return;
-      }
-      
-      const newCoupon = {
-        code: this.couponForm.code.toUpperCase().trim(),
-        type: this.couponForm.type,
-        value: Number(this.couponForm.value),
-        minOrder: Number(this.couponForm.minOrder || 0),
-        used: Number(this.couponForm.used || 0),
-        limit: Number(this.couponForm.limit || 100),
-        expiry: this.couponForm.expiry,
-        active: this.couponForm.active
-      };
-      
-      if (this.modalMode === 'add') {
-        if (this.coupons.some(c => c.code === newCoupon.code)) {
-          this.showToast('Mã voucher này đã tồn tại!', 'error');
-          return;
-        }
-        this.coupons.push(newCoupon);
-        this.showToast(`Đã tạo mã giảm giá "${newCoupon.code}" thành công!`, 'success');
-      } else {
-        const idx = this.coupons.findIndex(c => c.code === newCoupon.code);
-        if (idx !== -1) {
-          this.coupons[idx] = newCoupon;
-          this.showToast(`Đã cập nhật mã giảm giá "${newCoupon.code}" thành công!`, 'info');
-        }
-      }
-      this.showModal = false;
-    },
-    confirmDeleteCoupon(coupon) {
-      window.Swal.fire({
-        title: 'XÓA MÃ GIẢM GIÁ NÀY?',
-        html: `Bạn có chắc chắn muốn xóa mã <b style="color: #D70018;">"${coupon.code}"</b>?<br><span style="font-size: 13px; color: #64748b;">Hành động này không thể hoàn tác.</span>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#D70018',
-        cancelButtonColor: '#f1f5f9',
-        confirmButtonText: 'Xác nhận xóa',
-        cancelButtonText: 'Hủy bỏ',
-        background: '#ffffff',
-        color: '#0f172a',
-        customClass: {
-          popup: 'swal-premium-popup',
-          title: 'swal-premium-title',
-          htmlContainer: 'swal-premium-text',
-          confirmButton: 'btn-swal-confirm',
-          cancelButton: 'btn-swal-cancel'
-        },
-        buttonsStyling: false
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.coupons = this.coupons.filter(c => c.code !== coupon.code);
-          this.showToast("Xóa mã giảm giá thành công!", "danger");
-        }
-      });
-    },
-    openFlashModal(mode, flash = null) {
-      this.flashModalMode = mode;
-      if (flash) {
-        this.flashForm = {
-          id: flash.id,
-          name: flash.name,
-          emoji: flash.emoji,
-          discount: flash.discount,
-          oldPrice: flash.oldPrice,
-          newPrice: flash.newPrice,
-          timeLeft: flash.timeLeft
-        };
-      } else {
-        this.flashForm = {
-          id: null,
-          name: '',
-          emoji: '⚡',
-          discount: 10,
-          oldPrice: '',
-          newPrice: 0,
-          timeLeft: '2g 00p'
-        };
-      }
-      this.showFlashModal = true;
-    },
-    calcFlashNewPrice() {
-      if (this.flashForm.oldPrice && this.flashForm.discount) {
-        this.flashForm.newPrice = Math.round(this.flashForm.oldPrice * (1 - this.flashForm.discount / 100));
-      } else if (this.flashForm.oldPrice) {
-        this.flashForm.newPrice = this.flashForm.oldPrice;
-      } else {
-        this.flashForm.newPrice = 0;
-      }
-    },
-    saveFlashSale() {
-      if (!this.flashForm.name || !this.flashForm.oldPrice || !this.flashForm.discount) {
-        this.showToast('Vui lòng điền đầy đủ các trường thông tin bắt buộc!', 'error');
-        return;
-      }
-      
-      this.calcFlashNewPrice();
-      
-      if (this.flashModalMode === 'add') {
-        const newId = this.flashSales.length > 0 ? Math.max(...this.flashSales.map(f => f.id)) + 1 : 1;
-        this.flashSales.push({
-          ...this.flashForm,
-          id: newId
-        });
-        this.showToast(`Đã tạo chương trình Flash Sale "${this.flashForm.name}" thành công!`, 'success');
-      } else {
-        const idx = this.flashSales.findIndex(f => f.id === this.flashForm.id);
-        if (idx !== -1) {
-          this.flashSales[idx] = { ...this.flashForm };
-          this.showToast(`Đã cập nhật Flash Sale "${this.flashForm.name}" thành công!`, 'info');
-        }
-      }
-      this.showFlashModal = false;
-    },
-    stopFlashSale(flash) {
-      window.Swal.fire({
-        title: 'DỪNG CHƯƠNG TRÌNH FLASH SALE?',
-        html: `Bạn có muốn dừng chương trình Flash Sale của <b style="color: #D70018;">"${flash.name}"</b>?<br><span style="font-size: 13px; color: #64748b;">Hành động này sẽ gỡ sản phẩm khỏi danh sách Flash Sale đang hoạt động.</span>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#D70018',
-        cancelButtonColor: '#f1f5f9',
-        confirmButtonText: 'Xác nhận dừng',
-        cancelButtonText: 'Hủy bỏ',
-        background: '#ffffff',
-        color: '#0f172a',
-        customClass: {
-          popup: 'swal-premium-popup',
-          title: 'swal-premium-title',
-          htmlContainer: 'swal-premium-text',
-          confirmButton: 'btn-swal-confirm',
-          cancelButton: 'btn-swal-cancel'
-        },
-        buttonsStyling: false
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.flashSales = this.flashSales.filter(f => f.id !== flash.id);
-          this.showToast("Đã dừng chương trình Flash Sale!", "danger");
-        }
-      });
-    },
-    showToast(message, type = "success") {
-      if (type === "success") {
-        this.$toast.success(message);
-      } else if (type === "danger" || type === "error") {
-        this.$toast.error(message);
-      } else if (type === "warning") {
-        this.$toast.warning(message);
-      } else {
-        this.$toast.info(message);
-      }
-    }
-  }
+  },
 };
 </script>
 

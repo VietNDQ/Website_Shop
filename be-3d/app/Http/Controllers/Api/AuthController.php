@@ -7,9 +7,36 @@ use App\Models\NguoiDung;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    public function checkToken()
+    {
+        $userLogin = Auth::guard('sanctum')->user();
+        if ($userLogin) {
+            if (!$userLogin->dang_hoat_dong) {
+                return response()->json([
+                    'status'    => false,
+                    'message'   => 'Tài khoản của bạn đã bị khóa.',
+                ], 403);
+            }
+
+            return response()->json([
+                'status'    => true,
+                'id'        => $userLogin->id,
+                'ho_ten'    => $userLogin->ho_ten,
+                'email'     => $userLogin->email,
+                'vai_tro'   => $userLogin->vai_tro,
+            ]);
+        } else {
+            return response()->json([
+                'status'    => false,
+                'message'   => 'Token không hợp lệ'
+            ], 401);
+        }
+    }
+    
     public function register(Request $request)
     {
         $request->validate([

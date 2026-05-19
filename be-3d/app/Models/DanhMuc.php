@@ -16,8 +16,12 @@ class DanhMuc extends Model
 
     protected $fillable = [
         'id_danh_muc_cha',
+        'emoji',
         'ten_danh_muc',
+        'mo_ta',
         'duong_dan_mau',
+        'thu_tu_hien_thi',
+        'trang_thai',
     ];
 
     public function parent()

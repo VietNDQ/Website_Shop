@@ -183,6 +183,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: "AdminCategories",
   data() {
@@ -202,15 +204,11 @@ export default {
         productCount: 0,
         status: "active"
       },
-      categories: [
-        { id: 1, name: "Mô hình Gundam", emoji: "🤖", slug: "gundam", desc: "Mô hình lắp ráp Gundam chính hãng Bandai Nhật Bản (HG, RG, MG, PG, SD...)", orderIndex: 1, productCount: 248, status: "active" },
-        { id: 2, name: "Mô hình Marvel", emoji: "🦾", slug: "marvel", desc: "Mô hình siêu anh hùng Avengers: Iron Man, Spider-Man, Captain America chính hãng Hot Toys", orderIndex: 2, productCount: 187, status: "active" },
-        { id: 3, name: "Mô hình Anime", emoji: "🐉", slug: "anime", desc: "Mô hình nhân vật Anime Nhật Bản cực hot: One Piece, Naruto, Dragon Ball, Demon Slayer...", orderIndex: 3, productCount: 163, status: "active" },
-        { id: 4, name: "Xe mô hình tĩnh", emoji: "🏎️", slug: "xe-mo-hinh", desc: "Mô hình ô tô, siêu xe thể thao, mô tô tĩnh các tỉ lệ cao cấp 1:18, 1:24, 1:43", orderIndex: 4, productCount: 142, status: "active" },
-        { id: 5, name: "Mô hình DC Comics", emoji: "🦇", slug: "dc-comics", desc: "Mô hình siêu anh hùng vũ trụ DC: Batman, Superman, Joker, Wonder Woman...", orderIndex: 5, productCount: 98, status: "active" },
-        { id: 6, name: "Mô hình Transformers", emoji: "🚛", slug: "transformers", desc: "Mô hình Robot biến hình Optimus Prime, Megatron, Bumblebee của hãng Hasbro, Takara Tomy", orderIndex: 6, productCount: 42, status: "hidden" }
-      ]
+      categories: []
     };
+  },
+  mounted() {
+    this.fetchCategories();
   },
   computed: {
     totalCategories() {
@@ -284,6 +282,21 @@ export default {
         this.form.slug = this.slugify(this.form.name);
       }
     },
+    async fetchCategories() {
+      try {
+        const config = {
+          headers: {
+            Authorization: 'Bearer ' + localStorage.getItem('token_admin')
+          }
+        };
+        const res = await axios.get('http://127.0.0.1:8000/api/quan-ly/danh-muc/data', config);
+        if (res.data.status) {
+          this.categories = res.data.data;
+        }
+      } catch (error) {
+        this.showToast("Không thể tải danh sách danh mục!", "error");
+      }
+    },
     openModal(mode, category = null) {
       this.modalMode = mode;
       if (category) {
@@ -305,24 +318,53 @@ export default {
       }
       this.showModal = true;
     },
-    saveForm() {
-      if (this.modalMode === "add") {
-        const newId = this.categories.length > 0 
-          ? Math.max(...this.categories.map(c => c.id)) + 1 
-          : 1;
-        this.categories.push({
-          ...this.form,
-          id: newId
-        });
-        this.showToast(`Đã thêm danh mục "${this.form.name}" thành công!`);
-      } else {
-        const index = this.categories.findIndex(c => c.id === this.form.id);
-        if (index !== -1) {
-          this.categories[index] = { ...this.form };
-          this.showToast(`Cập nhật danh mục "${this.form.name}" thành công!`, "info");
+    async saveForm() {
+      try {
+        const payload = {
+          ten_danh_muc: this.form.name,
+          duong_dan_mau: this.form.slug,
+          emoji: this.form.emoji,
+          mo_ta: this.form.desc,
+          thu_tu_hien_thi: this.form.orderIndex,
+          trang_thai: this.form.status
+        };
+
+        const config = {
+          headers: {
+            Authorization: 'Bearer ' + localStorage.getItem('token_admin')
+          }
+        };
+
+        if (this.modalMode === "add") {
+          const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/danh-muc/create', payload, config);
+          if (res.data.status) {
+            this.showToast(`Đã thêm danh mục "${this.form.name}" thành công!`);
+            this.fetchCategories();
+            this.showModal = false;
+          } else {
+            this.showToast(res.data.message, "error");
+          }
+        } else {
+          payload.id = this.form.id;
+          const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/danh-muc/update', payload, config);
+          if (res.data.status) {
+            this.showToast(`Cập nhật danh mục "${this.form.name}" thành công!`, "info");
+            this.fetchCategories();
+            this.showModal = false;
+          } else {
+            this.showToast(res.data.message, "error");
+          }
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 422) {
+          const errors = error.response.data.errors;
+          Object.keys(errors).forEach(key => {
+            errors[key].forEach(msg => this.showToast(msg, "error"));
+          });
+        } else {
+          this.showToast("Có lỗi xảy ra, vui lòng thử lại!", "error");
         }
       }
-      this.showModal = false;
     },
     confirmDelete(category) {
       window.Swal.fire({
@@ -344,10 +386,24 @@ export default {
           cancelButton: 'btn-swal-cancel'
         },
         buttonsStyling: false
-      }).then((result) => {
+      }).then(async (result) => {
         if (result.isConfirmed) {
-          this.categories = this.categories.filter(c => c.id !== category.id);
-          this.showToast("Xóa danh mục thành công!", "danger");
+          try {
+            const config = {
+              headers: {
+                Authorization: 'Bearer ' + localStorage.getItem('token_admin')
+              }
+            };
+            const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/danh-muc/delete', { id: category.id }, config);
+            if (res.data.status) {
+              this.showToast("Xóa danh mục thành công!", "danger");
+              this.fetchCategories();
+            } else {
+              this.showToast(res.data.message, "error");
+            }
+          } catch (error) {
+            this.showToast("Không thể xóa danh mục!", "error");
+          }
         }
       });
     },

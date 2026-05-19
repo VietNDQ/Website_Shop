@@ -23,6 +23,9 @@ class NguoiDung extends Authenticatable
         'vai_tro', // 1: quan_tri, 2: quan_ly, 3: khach_hang (Mặc định)
         'dang_hoat_dong',
         'dang_nhap_lan_cuoi_luc',
+        'ngay_sinh',
+        'gioi_thieu',
+        'anh_dai_dien',
     ];
 
     protected $hidden = [

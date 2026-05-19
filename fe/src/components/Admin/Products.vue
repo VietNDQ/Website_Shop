@@ -55,10 +55,7 @@
         <div class="toolbar-right">
           <select v-model="filterCategory" class="sel">
             <option value="">Tất cả danh mục</option>
-            <option>Gundam</option>
-            <option>Marvel</option>
-            <option>Anime</option>
-            <option>Xe mô hình</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
           </select>
           <select v-model="filterStatus" class="sel">
             <option value="">Tất cả trạng thái</option>
@@ -78,7 +75,6 @@
           <tr>
             <th style="color: #080616">#</th>
             <th style="color: #080616">Sản phẩm</th>
-            <th style="color: #080616">SKU</th>
             <th style="color: #080616">Danh mục</th>
             <th style="color: #080616">Giá bán</th>
             <th style="color: #080616">Tồn kho</th>
@@ -92,8 +88,8 @@
             <td>
               <div class="product-cell">
                 <div class="product-thumb">
-                  <img v-if="p.image" :src="p.image" class="prod-img-preview" />
-                  <span v-else>{{ p.emoji }}</span>
+                  <img v-if="p.image" :src="p.image && p.image.startsWith('http') ? p.image : 'http://127.0.0.1:8000' + p.image" class="prod-img-preview" />
+                  <span v-else>{{ p.emoji || '📦' }}</span>
                 </div>
                 <div>
                   <p class="prod-name">{{ p.name }}</p>
@@ -101,12 +97,11 @@
                 </div>
               </div>
             </td>
-            <td><code class="sku">{{ p.sku }}</code></td>
             <td>{{ p.category }}</td>
             <td>
               <div>
-                <span class="price-main">{{ formatPrice(p.price) }}</span>
-                <span v-if="p.priceOrig" class="price-orig">{{ formatPrice(p.priceOrig) }}</span>
+                <span class="price-main">{{ formatVND(p.price) }}</span>
+                <span v-if="p.priceOrig" class="price-orig">{{ formatVND(p.priceOrig) }}</span>
               </div>
             </td>
             <td>
@@ -117,6 +112,12 @@
             </td>
             <td>
               <div class="action-btns">
+                <button class="act-btn view" @click="openViewModal(p)" title="Xem chi tiết" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
                 <button class="act-btn edit" @click="openModal('edit', p)" title="Sửa">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
@@ -160,11 +161,9 @@
                   </div>
                   <div class="form-group">
                     <label>Danh mục <span class="req">*</span></label>
-                    <select v-model="form.category" required>
-                      <option>Gundam</option>
-                      <option>Marvel</option>
-                      <option>Anime</option>
-                      <option>Xe mô hình</option>
+                    <select v-model="form.id_danh_muc" required>
+                      <option value="" disabled>-- Chọn danh mục --</option>
+                      <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -257,10 +256,91 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Xem Chi Tiết Sản Phẩm (Premium Detail view) -->
+    <div class="modal-overlay" v-if="showViewModal" @click.self="closeViewModal">
+      <div class="modal-box modal-lg view-detail-modal">
+        <div class="modal-header">
+          <h2>Chi tiết sản phẩm</h2>
+          <button class="modal-close" @click="closeViewModal">✕</button>
+        </div>
+        <div class="modal-body" v-if="selectedProduct">
+          <div class="product-detail-grid">
+            <!-- Left panel: Media view -->
+            <div class="detail-media-panel">
+              <div class="main-image-wrap">
+                <img v-if="selectedProduct.image" :src="selectedProduct.image.startsWith('http') ? selectedProduct.image : 'http://127.0.0.1:8000' + selectedProduct.image" class="detail-main-img" />
+                <span class="no-img-placeholder" v-else>
+                  <span class="emoji-big">{{ selectedProduct.emoji || '📦' }}</span>
+                </span>
+              </div>
+              <div class="gallery-thumbs" v-if="selectedProduct.gallery && selectedProduct.gallery.length > 0">
+                <div class="thumb-item" v-for="(img, idx) in selectedProduct.gallery" :key="idx">
+                  <img :src="img.startsWith('http') ? img : 'http://127.0.0.1:8000' + img" class="thumb-img" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Right panel: Information -->
+            <div class="detail-info-panel">
+              <div class="info-header-block">
+                <span class="detail-cat-badge">{{ selectedProduct.category }}</span>
+                <h3 class="detail-name">{{ selectedProduct.name }}</h3>
+                <div class="detail-sku-row">
+                  <span class="sku-label">SKU:</span>
+                  <span class="sku-val">{{ selectedProduct.sku }}</span>
+                </div>
+              </div>
+
+              <div class="info-price-card">
+                <div class="detail-price-main">{{ formatVND(selectedProduct.price) }}</div>
+                <div class="detail-price-orig" v-if="selectedProduct.priceOrig">{{ formatVND(selectedProduct.priceOrig) }}</div>
+              </div>
+
+              <div class="info-spec-list">
+                <div class="spec-item">
+                  <span class="spec-lbl">Kho hàng:</span>
+                  <span class="spec-val">
+                    <span class="stock-badge" :class="selectedProduct.stock < 10 ? 'low' : 'ok'">
+                      {{ selectedProduct.stock }} cái
+                    </span>
+                  </span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-lbl">Trạng thái:</span>
+                  <span class="spec-val">
+                    <span class="status-pill" :class="'s-' + selectedProduct.status">
+                      {{ statusMap[selectedProduct.status] }}
+                    </span>
+                  </span>
+                </div>
+                <div class="spec-item" v-if="selectedProduct.brand">
+                  <span class="spec-lbl">Thương hiệu:</span>
+                  <span class="spec-val font-semibold">{{ selectedProduct.brand }}</span>
+                </div>
+              </div>
+
+              <div class="detail-desc-block">
+                <h4>Mô tả sản phẩm:</h4>
+                <div class="desc-content-scroll">
+                  <p v-if="selectedProduct.desc">{{ selectedProduct.desc }}</p>
+                  <p class="no-desc" v-else>Chưa có mô tả cho sản phẩm này.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="closeViewModal">Đóng</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'AdminProducts',
   data() {
@@ -269,11 +349,14 @@ export default {
       filterCategory: '',
       filterStatus: '',
       showModal: false,
+      showViewModal: false,
+      selectedProduct: null,
       modalMode: 'add',
       form: {
         id: null,
         name: '',
-        category: 'Gundam',
+        category: '',
+        id_danh_muc: null,
         brand: '',
         price: '',
         priceOrig: '',
@@ -283,16 +366,13 @@ export default {
         status: 'active',
         emoji: '🧸',
         image: '',
-        gallery: []
+        imageFile: null,
+        gallery: [],       // preview URLs (string)
+        galleryFiles: []   // File objects to upload
       },
       statusMap: { active: 'Đang bán', out: 'Hết hàng', hidden: 'Ẩn' },
-      products: [
-        { id: 1, name: 'Gundam RX-78-2 MG', brand: 'Bandai', sku: 'GD-001', category: 'Gundam', price: 1250000, priceOrig: 1500000, stock: 45, status: 'active', emoji: '🤖', image: '', gallery: [] },
-        { id: 2, name: 'Iron Man MK50', brand: 'Hot Toys', sku: 'MV-012', category: 'Marvel', price: 3500000, priceOrig: null, stock: 8, status: 'active', emoji: '🦾', image: '', gallery: [] },
-        { id: 3, name: 'Dragon Ball Goku SSJ', brand: 'S.H.Figuarts', sku: 'AN-033', category: 'Anime', price: 890000, priceOrig: null, stock: 0, status: 'out', emoji: '🐉', image: '', gallery: [] },
-        { id: 4, name: 'Ferrari F40 1:18', brand: 'Bburago', sku: 'XE-007', category: 'Xe mô hình', price: 650000, priceOrig: null, stock: 23, status: 'active', emoji: '🏎️', image: '', gallery: [] },
-        { id: 5, name: 'One Piece Luffy Gear 5', brand: 'Megahouse', sku: 'AN-044', category: 'Anime', price: 2100000, priceOrig: null, stock: 12, status: 'hidden', emoji: '⚓', image: '', gallery: [] },
-      ],
+      products: [],
+      categories: [],
     };
   },
   computed: {
@@ -320,18 +400,53 @@ export default {
       return this.products.filter(p => {
         const matchSearch = !this.search || 
           p.name.toLowerCase().includes(this.search.toLowerCase()) || 
-          p.sku.toLowerCase().includes(this.search.toLowerCase());
+          (p.sku && p.sku.toLowerCase().includes(this.search.toLowerCase()));
         const matchCat = !this.filterCategory || p.category === this.filterCategory;
         const matchStatus = !this.filterStatus || p.status === this.filterStatus;
         return matchSearch && matchCat && matchStatus;
       });
     },
   },
+  mounted() {
+    this.fetchProducts();
+    this.fetchCategories();
+  },
   methods: {
+    getConfig() {
+      return {
+        headers: { 
+          Authorization: 'Bearer ' + localStorage.getItem('token_admin'),
+        }
+      };
+    },
+    async fetchProducts() {
+      try {
+        const res = await axios.get('http://127.0.0.1:8000/api/quan-ly/san-pham/data', this.getConfig());
+        this.products = res.data.data || [];
+      } catch (err) {
+        this.showToast('Lỗi tải danh sách sản phẩm', 'error');
+      }
+    },
+    async fetchCategories() {
+      try {
+        const res = await axios.get('http://127.0.0.1:8000/api/quan-ly/danh-muc/data', this.getConfig());
+        if (res.data.status) {
+          this.categories = res.data.data || [];
+        }
+      } catch (err) {
+        this.showToast('Lỗi tải danh sách danh mục', 'error');
+      }
+    },
     formatPrice(value) {
       if (value === null || value === undefined || value === '') return '';
       if (typeof value === 'string') return value;
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+    },
+    formatVND(number) {
+        return new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+        }).format(number);
     },
     showToast(message, type = "success") {
       if (type === "success") {
@@ -347,11 +462,23 @@ export default {
     onPrimaryImageChange(e) {
       const file = e.target.files[0];
       if (file) {
-        this.form.image = URL.createObjectURL(file);
+        // Validate max size 2MB
+        if (file.size > 9 * 1024 * 1024) {
+          this.showToast('Hình ảnh không được vượt quá 9MB!', 'error');
+          return;
+        }
+        this.form.imageFile = file;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.form.image = e.target.result;
+        };
+        reader.readAsDataURL(file);
       }
     },
     removePrimaryImage() {
       this.form.image = '';
+      this.form.imageFile = null;
       if (this.$refs.primaryFileInput) {
         this.$refs.primaryFileInput.value = '';
       }
@@ -359,25 +486,66 @@ export default {
     onGalleryImageChange(e) {
       const files = Array.from(e.target.files);
       files.forEach(file => {
-        this.form.gallery.push(URL.createObjectURL(file));
+        if (file.size > 9 * 1024 * 1024) {
+          this.showToast(`Ảnh "${file.name}" vượt quá 9MB!`, 'error');
+          return;
+        }
+        // Lưu File object để upload
+        this.form.galleryFiles.push(file);
+        // Tạo preview URL
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          this.form.gallery.push(ev.target.result);
+        };
+        reader.readAsDataURL(file);
       });
+      // Reset input để có thể chọn lại ảnh cũ
+      e.target.value = '';
     },
     removeGalleryImage(index) {
       this.form.gallery.splice(index, 1);
+      this.form.galleryFiles.splice(index, 1);
+    },
+    openViewModal(product) {
+      this.selectedProduct = product;
+      this.showViewModal = true;
+    },
+    closeViewModal() {
+      this.showViewModal = false;
+      this.selectedProduct = null;
     },
     openModal(mode, product = null) {
       this.modalMode = mode;
       if (product) {
         this.form = { 
-          ...product,
-          gallery: product.gallery ? [...product.gallery] : []
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          id_danh_muc: product.id_danh_muc,
+          brand: product.brand || '',
+          price: product.price,
+          priceOrig: product.priceOrig || '',
+          sku: product.sku,
+          stock: product.stock,
+          desc: product.desc || '',
+          status: product.status,
+          emoji: product.emoji || '📦',
+          image: product.image || '',
+          imageFile: null,
+          gallery: product.gallery ? product.gallery.map(img => img.startsWith('http') ? img : 'http://127.0.0.1:8000' + img) : [],
+          galleryFiles: []  // galleryFiles luôn rỗng khi mở modal sửa
         };
+        // Ghép domain cho ảnh từ storage
+        if (this.form.image && !this.form.image.startsWith('http') && !this.form.image.startsWith('data:')) {
+            this.form.image = 'http://127.0.0.1:8000' + this.form.image;
+        }
       } else {
         const nextSku = 'SP-' + String(this.products.length + 1).padStart(5, '0');
         this.form = {
           id: null,
           name: '',
-          category: 'Gundam',
+          category: '',
+          id_danh_muc: this.categories.length > 0 ? this.categories[0].id : null,
           brand: '',
           price: '',
           priceOrig: '',
@@ -387,7 +555,9 @@ export default {
           status: 'active',
           emoji: '🧸',
           image: '',
-          gallery: []
+          imageFile: null,
+          gallery: [],
+          galleryFiles: []
         };
       }
       this.showModal = true;
@@ -395,22 +565,73 @@ export default {
     closeModal() {
       this.showModal = false;
     },
-    saveProduct() {
-      if (this.modalMode === 'add') {
-        const newId = this.products.length > 0 ? Math.max(...this.products.map(p => p.id)) + 1 : 1;
-        this.products.push({
-          ...this.form,
-          id: newId
-        });
-        this.showToast(`Đã thêm sản phẩm "${this.form.name}" thành công!`, 'success');
-      } else {
-        const idx = this.products.findIndex(p => p.id === this.form.id);
-        if (idx !== -1) {
-          this.products[idx] = { ...this.form };
-          this.showToast(`Cập nhật sản phẩm "${this.form.name}" thành công!`, 'info');
+    async saveProduct() {
+      try {
+        const formData = new FormData();
+        formData.append('ten_san_pham', this.form.name);
+        formData.append('gia_co_ban', this.form.price);
+        formData.append('sku', this.form.sku);
+        formData.append('so_luong_ton_kho', this.form.stock);
+        formData.append('tinh_trang', this.form.status);
+        if (this.form.id_danh_muc) {
+          formData.append('id_danh_muc', this.form.id_danh_muc);
+        }
+        if (this.form.desc) formData.append('mo_ta', this.form.desc);
+        
+        if (this.form.imageFile) {
+          formData.append('hinh_anh', this.form.imageFile);
+        }
+        // Gửi nhiều ảnh gallery
+        if (this.form.galleryFiles && this.form.galleryFiles.length > 0) {
+          this.form.galleryFiles.forEach(file => {
+            formData.append('hinh_anh_phu[]', file);
+          });
+        }
+
+        const config = {
+          headers: {
+            Authorization: 'Bearer ' + localStorage.getItem('token_admin'),
+            'Content-Type': 'multipart/form-data'
+          }
+        };
+
+        if (this.modalMode === 'add') {
+          const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/san-pham/create', formData, config);
+          if (res.data.status) {
+            this.showToast(res.data.message, 'success');
+            this.fetchProducts();
+            window.dispatchEvent(new CustomEvent("orderStatusUpdated"));
+            this.closeModal();
+          } else {
+            this.showToast(res.data.message, 'error');
+          }
+        } else {
+          formData.append('id', this.form.id);
+          const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/san-pham/update', formData, config);
+          if (res.data.status) {
+            this.showToast(res.data.message, 'success');
+            this.fetchProducts();
+            window.dispatchEvent(new CustomEvent("orderStatusUpdated"));
+            this.closeModal();
+          } else {
+            this.showToast(res.data.message, 'error');
+          }
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 422) {
+          const errorData = error.response.data.errors;
+          Object.keys(errorData).forEach((field) => {
+            const messages = errorData[field];
+            messages.forEach((msg) => {
+              this.showToast(msg, 'error');
+            });
+          });
+        } else if (error.response && error.response.data && error.response.data.message) {
+          this.showToast(error.response.data.message, 'error');
+        } else {
+          this.showToast("Có lỗi hệ thống xảy ra. Vui lòng thử lại!", 'error');
         }
       }
-      this.closeModal();
     },
     confirmDelete(product) {
       window.Swal.fire({
@@ -432,10 +653,20 @@ export default {
           cancelButton: 'btn-swal-cancel'
         },
         buttonsStyling: false
-      }).then((result) => {
+      }).then(async (result) => {
         if (result.isConfirmed) {
-          this.products = this.products.filter(p => p.id !== product.id);
-          this.showToast("Xóa sản phẩm thành công!", "danger");
+          try {
+            const res = await axios.post(`http://127.0.0.1:8000/api/quan-ly/san-pham/delete`, { id: product.id }, this.getConfig());
+            if (res.data.status) {
+              this.showToast(res.data.message, "success");
+              this.fetchProducts();
+              window.dispatchEvent(new CustomEvent("orderStatusUpdated"));
+            } else {
+              this.showToast(res.data.message, "error");
+            }
+          } catch (err) {
+            this.showToast("Xóa thất bại", "error");
+          }
         }
       });
     }
@@ -626,5 +857,174 @@ export default {
   height: 100%;
   object-fit: cover;
   border-radius: 6px;
+}
+/* Product Detail Modal Styles */
+.view-detail-modal {
+  max-width: 820px !important;
+}
+.product-detail-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.3fr;
+  gap: 30px;
+  align-items: start;
+}
+.detail-media-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.main-image-wrap {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.detail-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.no-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.emoji-big {
+  font-size: 64px;
+}
+.gallery-thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.thumb-item {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.thumb-item:hover {
+  border-color: #6366f1;
+  transform: translateY(-2px);
+}
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.info-header-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.detail-cat-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+.detail-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+}
+.detail-sku-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+.sku-val {
+  font-weight: 700;
+  color: #334155;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.info-price-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.detail-price-main {
+  font-size: 26px;
+  font-weight: 800;
+  color: #D70018;
+}
+.detail-price-orig {
+  font-size: 16px;
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.info-spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 15px;
+}
+.spec-item {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+.spec-lbl {
+  width: 110px;
+  color: #64748b;
+  font-weight: 500;
+}
+.spec-val {
+  color: #1e293b;
+}
+
+.detail-desc-block h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 8px;
+}
+.desc-content-scroll {
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #475569;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px dashed #e2e8f0;
+}
+.no-desc {
+  font-style: italic;
+  color: #94a3b8;
 }
 </style>

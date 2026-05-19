@@ -51,14 +51,11 @@
         </thead>
         <tbody>
           <tr v-for="o in filteredOrders" :key="o.id">
-            <td><span class="order-id-text">{{ o.id }}</span></td>
+            <td><span class="order-id-text">{{ o.code }}</span></td>
             <td>
-              <div class="customer-cell">
-                <div class="cus-avatar">{{ o.customer[0] }}</div>
-                <div>
-                  <p class="cus-name">{{ o.customer }}</p>
-                  <p class="cus-phone">{{ o.phone }}</p>
-                </div>
+              <div class="customer-cell" style="display: block;">
+                <p class="cus-name" style="font-weight: 500; margin-bottom: 2px;">{{ o.customer }}</p>
+                <p class="cus-phone" style="font-size: 12px; color: #6b7280;" v-if="o.phone && o.phone !== 'N/A'">{{ o.phone }}</p>
               </div>
             </td>
             <td>{{ o.product }}</td>
@@ -70,9 +67,6 @@
               <div class="action-btns">
                 <button class="act-btn view" @click="openDetail(o)" title="Chi tiết">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-                <button class="act-btn edit" title="Cập nhật">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
               </div>
             </td>
@@ -95,7 +89,7 @@
     <div class="modal-overlay" v-if="showDetail" @click.self="showDetail = false">
       <div class="modal-box modal-lg" v-if="selectedOrder">
         <div class="modal-header">
-          <h2>Chi tiết đơn hàng {{ selectedOrder.id }}</h2>
+          <h2>Chi tiết đơn hàng {{ selectedOrder.code }}</h2>
           <button class="modal-close" @click="showDetail = false">✕</button>
         </div>
         <div class="modal-body">
@@ -105,8 +99,8 @@
               <div class="detail-rows">
                 <div class="detail-row"><span>Họ tên:</span><strong>{{ selectedOrder.customer }}</strong></div>
                 <div class="detail-row"><span>SĐT:</span><strong>{{ selectedOrder.phone }}</strong></div>
-                <div class="detail-row"><span>Địa chỉ:</span><strong>123 Lê Lợi, Q.1, TP.HCM</strong></div>
-                <div class="detail-row"><span>Thanh toán:</span><strong>{{ selectedOrder.payment }}</strong></div>
+                <div class="detail-row"><span>Địa chỉ:</span><strong>{{ selectedOrder.address }}</strong></div>
+                <div class="detail-row"><span>Thanh toán:</span><strong>{{ selectedOrder.payment }} ({{ selectedOrder.payment_status }})</strong></div>
               </div>
             </div>
             <div class="detail-section">
@@ -118,25 +112,52 @@
                   <span>{{ s.label }}</span>
                 </div>
               </div>
-              <div class="workflow-actions">
-                <button class="btn-primary" style="font-size:12px;padding:8px 14px">Chuyển bước tiếp</button>
-                <button class="btn-ghost" style="font-size:12px;padding:8px 14px;color:#dc2626;border-color:#fca5a5">Huỷ đơn</button>
-              </div>
             </div>
           </div>
           <div class="detail-section" style="margin-top:16px">
-            <h3 class="detail-sec-title">Sản phẩm trong đơn</h3>
+              <h3 class="detail-sec-title">Sản phẩm trong đơn</h3>
             <table class="data-table" style="margin-top:10px">
               <thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th></tr></thead>
               <tbody>
-                <tr><td>{{ selectedOrder.product }}</td><td>1.250.000 ₫</td><td>1</td><td>{{ selectedOrder.total }}</td></tr>
+                <tr v-for="(sp, idx) in selectedOrder.chi_tiets" :key="idx">
+                  <td>{{ sp.ten }}</td>
+                  <td>{{ sp.gia }}</td>
+                  <td>{{ sp.sl }}</td>
+                  <td>{{ sp.thanh_tien }}</td>
+                </tr>
               </tbody>
             </table>
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn-outline">In hóa đơn</button>
+          <button class="btn-primary" style="background-color: #3b82f6; border-color: #3b82f6;" v-if="selectedOrder.status === 'cho_xu_ly'" @click="updateOrderStatus('dang_chuan_bi')">Xác nhận đơn</button>
+          <button class="btn-primary" style="background-color: #f59e0b; border-color: #f59e0b;" v-if="selectedOrder.status === 'dang_chuan_bi'" @click="updateOrderStatus('dang_giao')">Giao hàng</button>
+          <button class="btn-primary" style="background-color: #10b981; border-color: #10b981;" v-if="selectedOrder.status === 'dang_giao'" @click="updateOrderStatus('da_giao')">Hoàn tất</button>
+          <button class="btn-outline" style="color: #ef4444; border-color: #ef4444; background-color: #fef2f2;" v-if="['cho_xu_ly', 'dang_chuan_bi'].includes(selectedOrder.status)" @click="updateOrderStatus('da_huy')">Huỷ đơn</button>
           <button class="btn-ghost" @click="showDetail = false">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" v-if="showConfirmModal" @click.self="showConfirmModal = false; pendingStatus = null">
+      <div class="modal-box" style="max-width: 420px; text-align: center; z-index: 1000; border-radius: 16px; padding: 32px 24px;">
+        <div style="width: 54px; height: 54px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3 style="margin-bottom: 12px; font-size: 20px; font-weight: 700; color: #111827;">Xác nhận thay đổi</h3>
+        <p style="color: #4b5563; line-height: 1.5; font-size: 15px; margin-bottom: 16px;">
+          Bạn có chắc chắn muốn chuyển trạng thái đơn hàng này thành:
+        </p>
+        <div style="margin-bottom: 28px;">
+          <span class="status-pill" :class="'s-' + pendingStatus" style="font-size: 15px !important; padding: 8px 24px !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            {{ statusMap[pendingStatus] }}
+          </span>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-ghost" style="padding: 10px 24px; border-radius: 8px;" @click="showConfirmModal = false; pendingStatus = null">Huỷ bỏ</button>
+          <button class="btn-primary" style="background-color: #3b82f6; border-color: #3b82f6; padding: 10px 24px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.5);" @click="executeStatusUpdate">Đồng ý</button>
         </div>
       </div>
     </div>
@@ -144,55 +165,140 @@
 </template>
 
 <script>
+import axios from 'axios';
+import { useToast } from 'vue-toastification';
+
 export default {
   name: 'AdminOrders',
+  setup() {
+    const toast = useToast();
+    return { toast };
+  },
   data() {
     return {
       search: '', filterPayment: '', activeTab: 'all',
       showDetail: false, selectedOrder: null,
-      tabs: [
-        { key: 'all', label: 'Tất cả', count: 1284 },
-        { key: 'pending', label: 'Chờ xác nhận', count: 42 },
-        { key: 'shipping', label: 'Đang giao', count: 128 },
-        { key: 'delivered', label: 'Đã giao', count: 1098 },
-        { key: 'cancelled', label: 'Đã huỷ', count: 16 },
-      ],
-      statusMap: { delivered: 'Đã giao', shipping: 'Đang giao', pending: 'Chờ xác nhận', cancelled: 'Đã huỷ' },
+      showConfirmModal: false, pendingStatus: null,
+      orders: [],
+      statusMap: { 
+        cho_xu_ly: 'Chờ xác nhận', 
+        dang_chuan_bi: 'Đang chuẩn bị', 
+        dang_giao: 'Đang giao', 
+        da_giao: 'Đã giao', 
+        da_huy: 'Đã huỷ' 
+      },
       workflow: [
-        { key: 'pending', label: 'Chờ xác nhận' },
-        { key: 'packing', label: 'Đang đóng gói' },
-        { key: 'shipping', label: 'Đang giao hàng' },
-        { key: 'delivered', label: 'Đã giao' },
-      ],
-      orders: [
-        { id: '#DH8821', customer: 'Nguyễn Văn A', phone: '0912 345 678', product: 'Gundam RX-78', total: '1.250.000 ₫', payment: 'COD', date: '18/05/2026', status: 'delivered' },
-        { id: '#DH8820', customer: 'Trần Thị B', phone: '0987 654 321', product: 'Mô hình ô tô F1', total: '890.000 ₫', payment: 'VNPAY', date: '18/05/2026', status: 'shipping' },
-        { id: '#DH8819', customer: 'Lê Quốc C', phone: '0901 222 333', product: 'Dragon Ball Z Set', total: '2.100.000 ₫', payment: 'Chuyển khoản', date: '17/05/2026', status: 'pending' },
-        { id: '#DH8818', customer: 'Phạm Thu D', phone: '0933 111 444', product: 'Iron Man MK50', total: '3.500.000 ₫', payment: 'COD', date: '17/05/2026', status: 'delivered' },
-        { id: '#DH8817', customer: 'Hoàng Minh E', phone: '0944 555 666', product: 'One Piece Luffy', total: '650.000 ₫', payment: 'VNPAY', date: '16/05/2026', status: 'cancelled' },
+        { key: 'cho_xu_ly', label: 'Chờ xác nhận' },
+        { key: 'dang_chuan_bi', label: 'Đang chuẩn bị' },
+        { key: 'dang_giao', label: 'Đang giao hàng' },
+        { key: 'da_giao', label: 'Đã giao' },
       ],
     };
   },
   computed: {
+    tabs() {
+      return [
+        { key: 'all', label: 'Tất cả', count: this.orders.length },
+        { key: 'cho_xu_ly', label: 'Chờ xác nhận', count: this.orders.filter(o => o.status === 'cho_xu_ly').length },
+        { key: 'dang_giao', label: 'Đang giao', count: this.orders.filter(o => o.status === 'dang_giao').length },
+        { key: 'da_giao', label: 'Đã giao', count: this.orders.filter(o => o.status === 'da_giao').length },
+        { key: 'da_huy', label: 'Đã huỷ', count: this.orders.filter(o => o.status === 'da_huy').length },
+      ];
+    },
     filteredOrders() {
       return this.orders.filter(o => {
-        const ms = !this.search || o.id.includes(this.search) || o.customer.toLowerCase().includes(this.search.toLowerCase());
+        const ms = !this.search || o.code.toLowerCase().includes(this.search.toLowerCase()) || o.customer.toLowerCase().includes(this.search.toLowerCase());
         const mt = this.activeTab === 'all' || o.status === this.activeTab;
         const mp = !this.filterPayment || o.payment === this.filterPayment;
         return ms && mt && mp;
       });
     },
     currentWfIdx() {
-      const wfMap = { pending: 0, packing: 1, shipping: 2, delivered: 3 };
+      const wfMap = { cho_xu_ly: 0, dang_chuan_bi: 1, dang_giao: 2, da_giao: 3 };
       return wfMap[this.selectedOrder?.status] ?? 0;
     },
   },
+  mounted() {
+    this.fetchOrders();
+  },
   methods: {
-    openDetail(order) { this.selectedOrder = order; this.showDetail = true; },
+    async fetchOrders() {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/quan-ly/don-hang', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token_admin')}`
+          }
+        });
+        if (response.data.status === 1) {
+          this.orders = response.data.data;
+        }
+      } catch (error) {
+        console.error('Lỗi lấy đơn hàng:', error);
+        this.toast.error('Không thể tải danh sách đơn hàng');
+      }
+    },
+    openDetail(order) { 
+      this.selectedOrder = order; 
+      this.showDetail = true; 
+    },
+    updateOrderStatus(newStatus) {
+      this.pendingStatus = newStatus;
+      this.showConfirmModal = true;
+    },
+    async executeStatusUpdate() {
+      if (!this.pendingStatus) return;
+      const newStatus = this.pendingStatus;
+      this.showConfirmModal = false;
+      this.pendingStatus = null;
+      
+      try {
+        const response = await axios.patch(`http://127.0.0.1:8000/api/quan-ly/don-hang/${this.selectedOrder.id}/trang-thai`, {
+          trang_thai: newStatus
+        }, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token_admin')}`
+          }
+        });
+
+        if (response.data.status === 1) {
+          this.toast.success(response.data.message);
+          this.selectedOrder.status = newStatus;
+          // Refresh list
+          this.fetchOrders();
+          window.dispatchEvent(new CustomEvent("orderStatusUpdated"));
+          if (newStatus === 'da_huy') {
+              this.showDetail = false;
+          }
+        } else {
+          this.toast.error(response.data.message);
+        }
+      } catch (error) {
+        console.error(error);
+        this.toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật đơn hàng');
+      }
+    }
   },
 };
 </script>
 
 <style scoped>
 @import "/style_admin/orders.css";
+
+.status-pill {
+    white-space: nowrap !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    display: inline-block !important;
+    min-width: 120px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.status-pill.s-cho_xu_ly { background-color: #fffbeb !important; color: #d97706 !important; border: 1px solid #fde68a !important; }
+.status-pill.s-dang_chuan_bi { background-color: #eff6ff !important; color: #2563eb !important; border: 1px solid #bfdbfe !important; }
+.status-pill.s-dang_giao { background-color: #fefce8 !important; color: #ca8a04 !important; border: 1px solid #fef08a !important; }
+.status-pill.s-da_giao { background-color: #ecfdf5 !important; color: #059669 !important; border: 1px solid #a7f3d0 !important; }
+.status-pill.s-da_huy { background-color: #fef2f2 !important; color: #dc2626 !important; border: 1px solid #fecaca !important; }
 </style>

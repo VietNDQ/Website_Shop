@@ -5,7 +5,7 @@
       <div class="page-title-wrap">
         <h1 class="page-title">{{ pageTitle }}</h1>
         <div class="breadcrumb">
-          <span>Admin</span>
+          <span>Nhân viên</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="9 18 15 12 9 6" />
           </svg>
@@ -47,20 +47,24 @@
       <div class="topbar-divider"></div>
 
       <!-- Profile -->
-      <router-link to="/admin/profile">
+      <router-link to="/nhan-vien/profile">
         <button class="topbar-profile" id="profile-btn">
-          <div class="profile-avatar">A</div>
+          <div class="profile-avatar" :style="avatarStyle">
+            <span v-if="!userAvatar">{{ userName ? userName.charAt(0).toUpperCase() : 'A' }}</span>
+          </div>
           <div class="profile-info">
-            <p class="profile-name">Admin Việt</p>
-            <p class="profile-role">Super Admin</p>
-        </div>
-      </button>
+            <p class="profile-name">{{ userName }}</p>
+            <p class="profile-role">{{ userRole }}</p>
+          </div>
+        </button>
       </router-link>
     </div>
   </header>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: "Topbar_Admin",
   props: {
@@ -69,6 +73,65 @@ export default {
       default: "Dashboard",
     },
   },
+  data() {
+    return {
+      userName: "Admin Việt",
+      userRole: "Super Admin",
+      userAvatar: "",
+    };
+  },
+  computed: {
+    avatarStyle() {
+      if (this.userAvatar) {
+        const imgUrl = this.userAvatar.startsWith('http') 
+          ? this.userAvatar 
+          : 'http://127.0.0.1:8000/' + this.userAvatar;
+        return {
+          backgroundImage: `url(${imgUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          color: 'transparent'
+        };
+      }
+      return {};
+    }
+  },
+  mounted() {
+    this.loadUserData();
+    this.fetchFreshUserData();
+    window.addEventListener('profileUpdated', this.loadUserData);
+  },
+  beforeUnmount() {
+    window.removeEventListener('profileUpdated', this.loadUserData);
+  },
+  methods: {
+    loadUserData() {
+      this.userName = localStorage.getItem('ho_ten') || 'Admin Việt';
+      this.userRole = localStorage.getItem('ten_vai_tro') || 'Super Admin';
+      this.userAvatar = localStorage.getItem('anh_dai_dien') || '';
+    },
+    async fetchFreshUserData() {
+      try {
+        const token = localStorage.getItem('token_admin');
+        if (!token) return;
+        
+        const res = await axios.get('http://127.0.0.1:8000/api/thong-tin-ca-nhan/profile', {
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+        if (res.data.status) {
+          const d = res.data.data;
+          localStorage.setItem('ho_ten', d.name);
+          localStorage.setItem('ten_vai_tro', d.roleName);
+          localStorage.setItem('anh_dai_dien', d.avatar || '');
+          window.dispatchEvent(new Event('profileUpdated'));
+        }
+      } catch (err) {
+        console.error('Error fetching fresh user data:', err);
+      }
+    }
+  }
 };
 </script>
 

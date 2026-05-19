@@ -21,6 +21,7 @@ class SanPham extends Model
         'ten_san_pham',
         'gia_co_ban',
         'mo_ta',
+        'tinh_trang',
     ];
 
     public function danhMuc()

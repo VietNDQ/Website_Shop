@@ -62,7 +62,13 @@
               <td>
                 <div class="action-btns">
                   <button class="act-btn edit" @click="openModal('edit', s)" title="Sửa chi tiết"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                  <button class="act-btn" :class="s.active ? 'del' : 'edit'" @click="confirmToggleLock(s)" :title="s.active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
+                  <button 
+                    class="act-btn" 
+                    :class="s.active ? 'del' : 'edit'" 
+                    @click="confirmToggleLock(s)" 
+                    :title="isCurrentUser(s.email) ? 'Không thể tự khóa tài khoản của chính mình' : (s.active ? 'Khóa tài khoản' : 'Mở khóa tài khoản')"
+                    :style="isCurrentUser(s.email) ? 'opacity: 0.4; cursor: not-allowed;' : ''"
+                  >
                     <!-- Locked Padlock (Closed) if active -->
                     <svg v-if="s.active" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                     <!-- Unlocked Padlock (Open) if locked -->
@@ -119,11 +125,14 @@
             </div>
             <div class="form-group span-2">
               <label>Vai trò <span class="req">*</span></label>
-              <select v-model="form.role">
+              <select v-model="form.role" :disabled="modalMode === 'edit' && isCurrentUser(form.email)">
                 <option value="Nhân viên kho">Nhân viên kho</option>
                 <option value="Nhân viên bán hàng">Nhân viên bán hàng</option>
                 <option value="Super Admin">Super Admin</option>
               </select>
+              <span v-if="modalMode === 'edit' && isCurrentUser(form.email)" style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                * Bạn không thể tự thay đổi vai trò của chính mình.
+              </span>
             </div>
             
             <template v-if="modalMode === 'add'">
@@ -148,6 +157,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'AdminStaff',
   data() {
@@ -165,20 +176,8 @@ export default {
         password: '',
         confirmPassword: '',
       },
-      staff: [
-        { id: 1, name: 'Nguyễn Quốc Việt', email: 'admin@skyline.vn', phone: '0912 000 001', role: 'Super Admin', roleKey: 'super', active: true, lastLogin: '18/05/2026 18:30', avatarBg: 'linear-gradient(135deg,#D70018,#7c3aed)' },
-        { id: 2, name: 'Trần Văn Kho', email: 'kho@skyline.vn', phone: '0912 000 002', role: 'Nhân viên kho', roleKey: 'warehouse', active: true, lastLogin: '18/05/2026 14:12', avatarBg: 'linear-gradient(135deg,#0ea5e9,#6366f1)' },
-        { id: 3, name: 'Lê Thị Sales', email: 'sales@skyline.vn', phone: '0912 000 003', role: 'Nhân viên bán hàng', roleKey: 'sales', active: true, lastLogin: '17/05/2026 09:45', avatarBg: 'linear-gradient(135deg,#22c55e,#0ea5e9)' },
-        { id: 4, name: 'Phạm Văn Bị Khóa', email: 'locked@skyline.vn', phone: '0912 000 004', role: 'Nhân viên kho', roleKey: 'warehouse', active: false, lastLogin: '01/03/2026', avatarBg: 'linear-gradient(135deg,#94a3b8,#64748b)' },
-      ],
-      activityLogs: [
-        { id: 1, user: 'Admin Việt', action: 'Thay đổi giá sản phẩm Gundam RX-78', time: '5 phút trước', color: '#6366f1' },
-        { id: 2, user: 'Trần Văn Kho', action: 'Cập nhật tồn kho: +50 Iron Man MK50', time: '22 phút trước', color: '#0ea5e9' },
-        { id: 3, user: 'Lê Thị Sales', action: 'Xử lý đơn hàng #DH8821 → Đang giao', time: '1 giờ trước', color: '#22c55e' },
-        { id: 4, user: 'Admin Việt', action: 'Tạo mã giảm giá SALE20', time: '2 giờ trước', color: '#f59e0b' },
-        { id: 5, user: 'Lê Thị Sales', action: 'Huỷ đơn hàng #DH8817 theo yêu cầu KH', time: '3 giờ trước', color: '#D70018' },
-        { id: 6, user: 'Trần Văn Kho', action: 'Thêm sản phẩm mới: Gundam SEED', time: '5 giờ trước', color: '#94a3b8' },
-      ],
+      staff: [],
+      activityLogs: [],
     };
   },
   computed: {
@@ -194,7 +193,58 @@ export default {
       });
     },
   },
+  mounted() {
+    this.fetchStaffData();
+    this.initPusher();
+  },
   methods: {
+    initPusher() {
+      if (window.Pusher) {
+        this.setupPusher();
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://js.pusher.com/8.4.0/pusher.min.js';
+        script.onload = () => {
+          this.setupPusher();
+        };
+        document.head.appendChild(script);
+      }
+    },
+    setupPusher() {
+      try {
+        const pusher = new window.Pusher('794a0b225fca675fc9a7', {
+          cluster: 'ap1'
+        });
+
+        const channel = pusher.subscribe('my-channel');
+        channel.bind('my-event', (data) => {
+          this.activityLogs.unshift(data);
+          if (this.activityLogs.length > 30) {
+            this.activityLogs.pop();
+          }
+        });
+      } catch (err) {
+        console.error('Error setting up Pusher:', err);
+      }
+    },
+    getConfig() {
+      return {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token_admin'),
+        }
+      };
+    },
+    async fetchStaffData() {
+      try {
+        const res = await axios.get('http://127.0.0.1:8000/api/quan-tri/nhan-vien/data', this.getConfig());
+        if (res.data.status) {
+          this.staff = res.data.data.staff || [];
+          this.activityLogs = res.data.data.logs || [];
+        }
+      } catch (err) {
+        this.showToast('Lỗi tải dữ liệu nhân viên!', 'error');
+      }
+    },
     getRoleKey(role) {
       if (role === 'Super Admin') return 'super';
       if (role === 'Nhân viên kho') return 'warehouse';
@@ -208,7 +258,7 @@ export default {
           id: staffMember.id,
           name: staffMember.name,
           email: staffMember.email,
-          phone: staffMember.phone,
+          phone: staffMember.phone === 'Chưa cấu hình' ? '' : staffMember.phone,
           role: staffMember.role,
           password: '',
           confirmPassword: '',
@@ -226,7 +276,7 @@ export default {
       }
       this.showModal = true;
     },
-    saveStaff() {
+    async saveStaff() {
       if (!this.form.name || !this.form.email) {
         this.showToast('Vui lòng nhập đầy đủ các trường thông tin bắt buộc!', 'error');
         return;
@@ -248,52 +298,51 @@ export default {
           return;
         }
         
-        if (this.staff.some(s => s.email.toLowerCase() === this.form.email.toLowerCase())) {
-          this.showToast('Địa chỉ email này đã được sử dụng!', 'error');
-          return;
+        try {
+          const payload = {
+            ho_ten: this.form.name.trim(),
+            email: this.form.email.trim(),
+            so_dien_thoai: this.form.phone ? this.form.phone.trim() : null,
+            vai_tro: this.form.role,
+            mat_khau: this.form.password,
+          };
+          const res = await axios.post('http://127.0.0.1:8000/api/quan-tri/nhan-vien/create', payload, this.getConfig());
+          if (res.data.status) {
+            this.showToast(`Đã tạo tài khoản cho "${this.form.name}" thành công!`, 'success');
+            this.fetchStaffData();
+            this.showModal = false;
+          } else {
+            this.showToast(res.data.message || 'Lỗi tạo tài khoản nhân viên!', 'error');
+          }
+        } catch (err) {
+          const errMsg = err.response?.data?.message || 'Có lỗi xảy ra khi tạo nhân viên!';
+          this.showToast(errMsg, 'error');
         }
-
-        const newId = this.staff.length > 0 ? Math.max(...this.staff.map(s => s.id)) + 1 : 1;
-        const gradients = [
-          'linear-gradient(135deg, #D70018, #7c3aed)',
-          'linear-gradient(135deg, #0ea5e9, #6366f1)',
-          'linear-gradient(135deg, #22c55e, #0ea5e9)',
-          'linear-gradient(135deg, #f59e0b, #22c55e)',
-          'linear-gradient(135deg, #ec4899, #8b5cf6)',
-        ];
-        const randomBg = gradients[Math.floor(Math.random() * gradients.length)];
-
-        this.staff.push({
-          id: newId,
-          name: this.form.name.trim(),
-          email: this.form.email.trim(),
-          phone: this.form.phone ? this.form.phone.trim() : 'Chưa cấu hình',
-          role: this.form.role,
-          roleKey: this.getRoleKey(this.form.role),
-          active: true,
-          lastLogin: 'Chưa đăng nhập',
-          avatarBg: randomBg
-        });
-
-        this.addActivityLog('Admin Việt', `Tạo tài khoản nhân viên mới: ${this.form.name}`, '#10b981');
-        this.showToast(`Đã tạo tài khoản cho "${this.form.name}" thành công!`, 'success');
       } else {
-        const idx = this.staff.findIndex(s => s.id === this.form.id);
-        if (idx !== -1) {
-          this.staff[idx].name = this.form.name.trim();
-          this.staff[idx].phone = this.form.phone ? this.form.phone.trim() : 'Chưa cấu hình';
-          this.staff[idx].role = this.form.role;
-          this.staff[idx].roleKey = this.getRoleKey(this.form.role);
-
-          this.addActivityLog('Admin Việt', `Cập nhật thông tin nhân viên: ${this.form.name}`, '#6366f1');
-          this.showToast(`Cập nhật thông tin nhân viên "${this.form.name}" thành công!`, 'info');
+        try {
+          const payload = {
+            id: this.form.id,
+            ho_ten: this.form.name.trim(),
+            so_dien_thoai: this.form.phone ? this.form.phone.trim() : null,
+            vai_tro: this.form.role,
+          };
+          const res = await axios.post('http://127.0.0.1:8000/api/quan-tri/nhan-vien/update', payload, this.getConfig());
+          if (res.data.status) {
+            this.showToast(`Cập nhật thông tin nhân viên "${this.form.name}" thành công!`, 'info');
+            this.fetchStaffData();
+            this.showModal = false;
+          } else {
+            this.showToast(res.data.message || 'Lỗi cập nhật nhân viên!', 'error');
+          }
+        } catch (err) {
+          const errMsg = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật nhân viên!';
+          this.showToast(errMsg, 'error');
         }
       }
-      this.showModal = false;
     },
     confirmToggleLock(staffMember) {
-      if (staffMember.email === 'admin@skyline.vn') {
-        this.showToast('Không thể tự khóa tài khoản Admin hệ thống!', 'error');
+      if (this.isCurrentUser(staffMember.email)) {
+        this.showToast('Không thể tự khóa tài khoản của chính mình!', 'error');
         return;
       }
 
@@ -325,32 +374,29 @@ export default {
           cancelButton: 'btn-swal-cancel'
         },
         buttonsStyling: false
-      }).then((result) => {
+      }).then(async (result) => {
         if (result.isConfirmed) {
-          staffMember.active = !staffMember.active;
-          const logMsg = isLocking 
-            ? `Khóa tài khoản nhân viên: ${staffMember.name}` 
-            : `Mở khóa tài khoản nhân viên: ${staffMember.name}`;
-          const logColor = isLocking ? '#D70018' : '#10b981';
-          const toastType = isLocking ? 'danger' : 'success';
-          const toastMsg = isLocking 
-            ? `Đã khóa tài khoản của "${staffMember.name}"!`
-            : `Đã mở khóa tài khoản của "${staffMember.name}"!`;
-
-          this.addActivityLog('Admin Việt', logMsg, logColor);
-          this.showToast(toastMsg, toastType);
+          try {
+            const res = await axios.post(`http://127.0.0.1:8000/api/quan-tri/nhan-vien/${staffMember.id}/toggle-lock`, {}, this.getConfig());
+            if (res.data.status) {
+              const toastMsg = isLocking 
+                ? `Đã khóa tài khoản của "${staffMember.name}"!`
+                : `Đã mở khóa tài khoản của "${staffMember.name}"!`;
+              const toastType = isLocking ? 'danger' : 'success';
+              this.showToast(toastMsg, toastType);
+              this.fetchStaffData();
+            } else {
+              this.showToast(res.data.message || 'Lỗi thay đổi trạng thái tài khoản!', 'error');
+            }
+          } catch (err) {
+            this.showToast('Có lỗi xảy ra khi thay đổi trạng thái!', 'error');
+          }
         }
       });
     },
-    addActivityLog(user, action, color = '#6366f1') {
-      const newId = this.activityLogs.length > 0 ? Math.max(...this.activityLogs.map(l => l.id)) + 1 : 1;
-      this.activityLogs.unshift({
-        id: newId,
-        user: user,
-        action: action,
-        time: 'Vừa xong',
-        color: color
-      });
+    isCurrentUser(email) {
+      const currentUserEmail = localStorage.getItem('email') || 'admin@skyline.vn';
+      return email === currentUserEmail;
     },
     showToast(message, type = "success") {
       if (type === "success") {

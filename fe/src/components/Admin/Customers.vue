@@ -169,8 +169,16 @@
           <table class="data-table" style="margin-top:8px">
             <thead><tr><th>Mã đơn</th><th>Sản phẩm</th><th>Tổng</th><th>Ngày</th><th>TT</th></tr></thead>
             <tbody>
-              <tr><td>#DH8821</td><td>Gundam RX-78</td><td>1.250.000 ₫</td><td>18/05/2026</td><td><span class="status-pill s-delivered">Đã giao</span></td></tr>
-              <tr><td>#DH8710</td><td>Iron Man MK50</td><td>3.500.000 ₫</td><td>10/04/2026</td><td><span class="status-pill s-delivered">Đã giao</span></td></tr>
+              <tr v-for="order in selectedCustomer.orderHistory" :key="order.code">
+                <td>{{ order.code }}</td>
+                <td>{{ order.products }}</td>
+                <td>{{ order.total }}</td>
+                <td>{{ order.date }}</td>
+                <td><span class="status-pill" :class="'s-' + order.status">{{ order.statusLabel }}</span></td>
+              </tr>
+              <tr v-if="!selectedCustomer.orderHistory || selectedCustomer.orderHistory.length === 0">
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 12px 0;">Chưa có lịch sử mua hàng.</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -183,18 +191,15 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'AdminCustomers',
   data() {
     return {
       tab: 'list', search: '', filterGroup: '',
       showProfile: false, selectedCustomer: null,
-      customers: [
-        { id: 1001, name: 'Nguyễn Văn A', email: 'a@gmail.com', phone: '0912 345 678', orders: 18, spent: '28.400.000 ₫', group: 'Khách VIP', joinDate: '12/01/2025', avatarBg: 'linear-gradient(135deg,#D70018,#7c3aed)' },
-        { id: 1002, name: 'Trần Thị B', email: 'b@gmail.com', phone: '0987 654 321', orders: 5, spent: '6.750.000 ₫', group: 'Khách thân thiết', joinDate: '03/03/2025', avatarBg: 'linear-gradient(135deg,#6366f1,#0ea5e9)' },
-        { id: 1003, name: 'Lê Quốc C', email: 'c@gmail.com', phone: '0901 222 333', orders: 1, spent: '2.100.000 ₫', group: 'Khách mới', joinDate: '15/05/2026', avatarBg: 'linear-gradient(135deg,#f59e0b,#22c55e)' },
-        { id: 1004, name: 'Phạm Thu D', email: 'd@gmail.com', phone: '0933 111 444', orders: 12, spent: '15.600.000 ₫', group: 'Khách thân thiết', joinDate: '20/06/2024', avatarBg: 'linear-gradient(135deg,#0ea5e9,#6366f1)' },
-      ],
+      customers: [],
       reviews: [
         { id: 1, customer: 'Nguyễn Văn A', product: 'Gundam RX-78', stars: 5, content: 'Sản phẩm rất đẹp, đúng như mô tả!', date: '18/05/2026', status: 'delivered', statusLabel: 'Đã duyệt' },
         { id: 2, customer: 'Trần Thị B', product: 'Mô hình F1', stars: 3, content: 'Bình thường, màu sắc hơi nhạt...', date: '17/05/2026', status: 'pending', statusLabel: 'Chờ duyệt' },
@@ -211,7 +216,31 @@ export default {
       });
     },
   },
+  mounted() {
+    this.fetchCustomers();
+  },
   methods: {
+    getConfig() {
+      return {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token_admin'),
+        }
+      };
+    },
+    async fetchCustomers() {
+      try {
+        const res = await axios.get('http://127.0.0.1:8000/api/quan-ly/khach-hang/data', this.getConfig());
+        if (res.data.status) {
+          this.customers = res.data.data || [];
+        }
+      } catch (err) {
+        if (this.$toast) {
+          this.$toast.error('Lỗi tải danh sách khách hàng');
+        } else {
+          console.error(err);
+        }
+      }
+    },
     openProfile(c) { this.selectedCustomer = c; this.showProfile = true; },
   },
 };

@@ -3,7 +3,7 @@
   <footer>
     <div class="footer-main">
       <div class="footer-brand">
-        <a href="#" class="footer-logo">SKYLINE<span></span>MODELS</a>
+        <a href="#" class="footer-logo">MÔ HÌNH<span></span>BALAB</a>
         <p class="footer-tagline">
           The premier destination for precision scale models. Serving collectors
           worldwide since 2009.
@@ -74,7 +74,7 @@
     <div class="footer-bottom">
       <div class="footer-bottom-inner">
         <span class="footer-copy"
-          >© 2025 Skyline Models. All rights reserved. Crafted with care for
+          >© 2025 Mô Hình BALAB. All rights reserved. Crafted with care for
           collectors.</span
         >
         <div class="footer-payments">

@@ -1,0 +1,25 @@
+.cus-tabs { display: flex; gap: 4px; }
+.cus-tab { padding: 9px 20px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #fff; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.cus-tab.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+.customer-cell { display: flex; align-items: center; gap: 10px; }
+.cus-avatar { width: 34px; height: 34px; border-radius: 9px; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cus-name { font-size: 13.5px; font-weight: 600; color: #0f172a; }
+.cus-phone { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+.price-red { font-weight: 700; color: #D70018; }
+.group-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
+.g-Khách\ VIP { background: rgba(245,158,11,0.15); color: #d97706; }
+.g-Khách\ thân\ thiết { background: rgba(99,102,241,0.12); color: #4f46e5; }
+.g-Khách\ mới { background: rgba(34,197,94,0.12); color: #16a34a; }
+.stars { display: flex; gap: 2px; font-size: 14px; }
+.star-on { color: #f59e0b; }
+.star-off { color: #e2e8f0; }
+.review-text { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; color: #475569; }
+.profile-top { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.profile-avatar-lg { width: 60px; height: 60px; border-radius: 14px; color: #fff; font-size: 24px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.profile-name { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+.profile-email { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+.profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.ps-item { background: #f8fafc; border-radius: 10px; padding: 14px; text-align: center; }
+.ps-val { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1; }
+.ps-lbl { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.detail-sec-title { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-bottom: 8px; }

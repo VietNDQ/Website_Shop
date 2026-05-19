@@ -1,0 +1,55 @@
+.period-btn { padding: 7px 16px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #fff; font-size: 12.5px; font-weight: 600; color: #64748b; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.period-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.kpi-card { background: #fff; border-radius: 16px; padding: 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: relative; overflow: hidden; transition: transform 0.2s; }
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-accent-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px; }
+.kpi-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kpi-val { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 800; color: #0f172a; line-height: 1; }
+.kpi-label { font-size: 12px; color: #94a3b8; margin-top: 4px; font-weight: 500; }
+.kpi-trend { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; margin-top: 6px; }
+.kpi-trend.up { color: #16a34a; }
+.kpi-trend.down { color: #dc2626; }
+.charts-row { display: grid; grid-template-columns: 1fr 300px; gap: 8px; }
+.chart-card { flex: 1; }
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; }
+.bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.bar-fill-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.bar-fill { width: 100%; border-radius: 5px 5px 0 0; transition: height 0.5s ease; min-height: 4px; }
+.bar-label { font-size: 10px; color: #94a3b8; font-weight: 600; }
+.bar-val { font-size: 9px; color: #64748b; font-weight: 600; white-space: nowrap; }
+.donut-wrap { position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+.donut-svg { width: 140px; height: 140px; transform: rotate(-90deg); }
+.donut-center { position: absolute; text-align: center; }
+.donut-val { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; }
+.donut-lbl { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.legend-list { display: flex; flex-direction: column; gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.legend-label { flex: 1; color: #475569; }
+.legend-pct { font-weight: 700; color: #0f172a; }
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.top-prod-list { display: flex; flex-direction: column; gap: 14px; }
+.tp-item { display: flex; align-items: center; gap: 12px; }
+.tp-rank { width: 24px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; color: #e2e8f0; text-align: center; flex-shrink: 0; }
+.tp-rank.top { color: #f59e0b; }
+.tp-emoji { font-size: 26px; flex-shrink: 0; }
+.tp-info { flex: 1; min-width: 0; }
+.tp-name { font-size: 13px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+.tp-bar-wrap { height: 5px; background: #f1f5f9; border-radius: 99px; }
+.tp-bar { height: 100%; border-radius: 99px; }
+.tp-sold { font-size: 12px; font-weight: 700; color: #0f172a; text-align: right; white-space: nowrap; }
+.tp-revenue { font-size: 11px; color: #D70018; font-weight: 600; text-align: right; white-space: nowrap; }
+.payment-list { display: flex; flex-direction: column; gap: 16px; }
+.payment-item { display: flex; align-items: center; gap: 12px; }
+.pm-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pm-info { flex: 1; min-width: 0; }
+.pm-name { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 5px; }
+.pm-stats { text-align: right; flex-shrink: 0; }
+.pm-pct { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1; }
+.pm-amt { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+  .bottom-row { grid-template-columns: 1fr; }
+}

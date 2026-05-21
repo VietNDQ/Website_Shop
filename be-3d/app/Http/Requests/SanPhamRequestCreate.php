@@ -16,6 +16,7 @@ class SanPhamRequestCreate extends FormRequest
         return [
             'ten_san_pham' => 'required|string|max:255',
             'gia_co_ban'   => 'required|numeric',
+            'gia_goc'      => 'nullable|numeric',
             'id_danh_muc'  => 'nullable|numeric',
             'mo_ta'        => 'nullable|string',
             'sku'          => 'required|string|max:100|unique:bien_the_san_pham,ma_kho',

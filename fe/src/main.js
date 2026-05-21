@@ -1,18 +1,22 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import './index.css'
 import App from './App.vue'
 import router from './router'
 import Client_layout from './layout/wrapper/client_index.vue'
 import Toast, { createToastInterface } from "vue-toastification"
 import "vue-toastification/dist/index.css"
+import vue3GoogleLogin from 'vue3-google-login'
 
 const app = createApp(App)
+const pinia = createPinia()
 
+app.use(pinia)
 app.use(router)
 
 const toastOptions = {
-  position: "top-right",
-  timeout: 3000,
+  position: "bottom-center",
+  timeout: 1500,
   closeOnClick: true,
   pauseOnFocusLoss: true,
   pauseOnHover: true,
@@ -33,5 +37,7 @@ app.component("default-layout", {
     return this.$slots.default ? this.$slots.default() : null
   }
 })
-
+app.use(vue3GoogleLogin, {
+  clientId: '1000023837690-mk7smuucpijk6hvrfhhiq1tbbl56v3ce.apps.googleusercontent.com' 
+})
 app.mount("#app")

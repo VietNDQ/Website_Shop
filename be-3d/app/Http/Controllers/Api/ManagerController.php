@@ -305,17 +305,21 @@ class ManagerController extends Controller
             $address = 'N/A';
             if (is_array($order->dia_chi_giao_hang)) {
                 $phone = $order->dia_chi_giao_hang['so_dien_thoai'] ?? 'N/A';
-                $addressParts = [];
-                if (isset($order->dia_chi_giao_hang['dia_chi_chi_tiet'])) $addressParts[] = $order->dia_chi_giao_hang['dia_chi_chi_tiet'];
-                if (isset($order->dia_chi_giao_hang['quan_huyen'])) $addressParts[] = $order->dia_chi_giao_hang['quan_huyen'];
-                if (isset($order->dia_chi_giao_hang['thanh_pho'])) $addressParts[] = $order->dia_chi_giao_hang['thanh_pho'];
-                if (count($addressParts) > 0) $address = implode(', ', $addressParts);
+                if (isset($order->dia_chi_giao_hang['dia_chi'])) {
+                    $address = $order->dia_chi_giao_hang['dia_chi'];
+                } else {
+                    $addressParts = [];
+                    if (isset($order->dia_chi_giao_hang['dia_chi_chi_tiet'])) $addressParts[] = $order->dia_chi_giao_hang['dia_chi_chi_tiet'];
+                    if (isset($order->dia_chi_giao_hang['quan_huyen'])) $addressParts[] = $order->dia_chi_giao_hang['quan_huyen'];
+                    if (isset($order->dia_chi_giao_hang['thanh_pho'])) $addressParts[] = $order->dia_chi_giao_hang['thanh_pho'];
+                    if (count($addressParts) > 0) $address = implode(', ', $addressParts);
+                }
             }
 
             return [
                 'id' => $order->id,
                 'code' => '#' . $order->ma_don_hang,
-                'customer' => $order->nguoiDung->ho_ten ?? 'Khách lẻ',
+                'customer' => $order->nguoiDung->ho_ten ?? ($order->dia_chi_giao_hang['ten'] ?? 'Khách lẻ'),
                 'phone' => $phone,
                 'address' => $address,
                 'product' => $productNames,
@@ -328,14 +332,14 @@ class ManagerController extends Controller
                 'chi_tiets' => $order->chiTiets->map(function ($ct) {
                     return [
                         'ten' => $ct->ten_bien_the_luc_mua,
-                        'gia' => number_format($ct->gia_luc_mua, 0, ',', '.') . ' ₫',
+                        'gia' => number_format($ct->don_gia, 0, ',', '.') . ' ₫',
                         'sl' => $ct->so_luong,
-                        'thanh_tien' => number_format($ct->gia_luc_mua * $ct->so_luong, 0, ',', '.') . ' ₫'
+                        'thanh_tien' => number_format($ct->thanh_tien, 0, ',', '.') . ' ₫'
                     ];
                 }),
                 'lich_su' => $order->lichSuTrangThais->map(function ($ls) {
                     return [
-                        'trang_thai' => $ls->trang_thai_moi,
+                        'trang_thai' => $ls->trang_thai,
                         'thoi_gian' => $ls->tao_luc ? $ls->tao_luc->format('d/m/Y H:i') : 'N/A',
                         'ghi_chu' => $ls->ghi_chu
                     ];
@@ -406,8 +410,7 @@ class ManagerController extends Controller
             // Ghi lịch sử trạng thái
             LichSuTrangThaiDonHang::create([
                 'id_don_hang' => $order->id,
-                'trang_thai_cu' => $oldStatus,
-                'trang_thai_moi' => $newStatus,
+                'trang_thai' => $newStatus,
                 'ghi_chu' => 'Admin cập nhật trạng thái',
             ]);
 

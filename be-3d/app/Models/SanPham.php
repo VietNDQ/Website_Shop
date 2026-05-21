@@ -20,6 +20,7 @@ class SanPham extends Model
         'id_danh_muc',
         'ten_san_pham',
         'gia_co_ban',
+        'gia_goc',
         'mo_ta',
         'tinh_trang',
     ];

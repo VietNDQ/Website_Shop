@@ -1,74 +1,73 @@
-<template>
-  <!-- ─── HERO ─── -->
-  <section class="hero">
+﻿<template>
+  <!--  HERO  -->
+ <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
     <div class="hero-orb hero-orb-1"></div>
     <div class="hero-orb hero-orb-2"></div>
     <div class="hero-inner">
       <div class="hero-content">
-        <div class="hero-eyebrow">Premium Collectible Models</div>
+        <div class="hero-eyebrow">Mô Hình In 3D Cao Cấp</div>
         <h1 class="hero-heading">
-          Discover Your Next<br />
-          <em>Extraordinary</em><br />
-          Model
+          Khám Phá Mô Hình<br />
+          <em>Độc Đáo</em><br />
+          Của Riêng Bạn
         </h1>
         <p class="hero-subtext">
-          Handpicked 1:18, 1:24 and 1:43 scale masterpieces — from iconic
-          architecture to limited-edition automotive legends. Precision
-          engineered for the discerning collector.
+          Tuyển tập các phôi in 3D FDM và Resin chất lượng cao, từ sa bàn kiến trúc đến robot mecha và các mẫu khớp động. Bề mặt láng mịn, độ nét hoàn hảo dành cho giới đam mê sáng tạo.
         </p>
         <div class="hero-stats">
           <div>
             <div class="hero-stat-value">2<span>K</span>+</div>
-            <div class="hero-stat-label">Models in stock</div>
+            <div class="hero-stat-label">Mẫu phôi in</div>
           </div>
           <div>
             <div class="hero-stat-value">48<span>h</span></div>
-            <div class="hero-stat-label">Fast dispatch</div>
+            <div class="hero-stat-label">Giao hỏa tốc</div>
           </div>
           <div>
-            <div class="hero-stat-value">4.9<span>★</span></div>
-            <div class="hero-stat-label">Avg. rating</div>
+            <div class="hero-stat-value">4.9<span></span></div>
+            <div class="hero-stat-label">Đánh giá sao</div>
           </div>
         </div>
       </div>
+      
       <div class="hero-visual">
         <div class="model-scene">
-          <div class="hero-badge">★ Editor's Pick</div>
+          <div class="hero-badge"><i class="fa-solid fa-fire"></i> Xu Hướng Mới</div>
+          
           <div class="model-float mf-1">
             <div class="model-float-inner">
-              <div class="model-float-img">🏛️</div>
+              <div class="model-float-img"><i class="fa-solid fa-dungeon"></i></div>
               <div class="model-float-info">
-                <div class="model-float-name">Burj Khalifa</div>
-                <div class="model-float-price">$189</div>
+                <div class="model-float-name">Lâu Đài Sa Bàn</div>
               </div>
             </div>
           </div>
+          
           <div class="model-float mf-2">
             <div class="model-float-inner">
-              <div class="model-float-img">🏎️</div>
+              <div class="model-float-img"><i class="fa-solid fa-dragon"></i></div>
               <div class="model-float-info">
-                <div class="model-float-name">Ferrari F40</div>
-                <div class="model-float-price">$249</div>
+                <div class="model-float-name">Rồng Khớp Động</div>
               </div>
             </div>
           </div>
+          
           <div class="model-float mf-3">
             <div class="model-float-inner">
-              <div class="model-float-img">✈️</div>
+              <div class="model-float-img"><i class="fa-solid fa-robot"></i></div>
               <div class="model-float-info">
-                <div class="model-float-name">Boeing 747</div>
-                <div class="model-float-price">$129</div>
+                <div class="model-float-name">Mecha Chibi</div>
               </div>
             </div>
           </div>
+          
         </div>
       </div>
     </div>
   </section>
-
-  <!-- ─── SEARCH & FILTER ─── -->
+  <!--  SEARCH & FILTER  -->
   <div class="search-section">
     <div class="search-inner">
       <div class="search-field-wrap">
@@ -79,31 +78,41 @@
         <input
           class="search-field"
           type="text"
-          placeholder="Search by name, brand, or scale…"
+          v-model="searchQuery"
+          @keyup.enter="handleSearch"
+          @focus="showSuggestions = true"
+          @blur="hideSuggestionsWithDelay"
+          placeholder="Tm kim theo tn hoc m t..."
         />
+        <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-box">
+          <button
+            v-for="item in suggestions"
+            :key="`${item.type}-${item.id}`"
+            type="button"
+            class="suggestion-item"
+            @mousedown.prevent="selectSuggestion(item)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
       </div>
-      <select class="select-filter">
-        <option>All Categories</option>
-        <option>Automotive</option>
-        <option>Architecture</option>
-        <option>Aviation</option>
-        <option>Military</option>
-        <option>Ships & Vessels</option>
+      <select class="select-filter" v-model="selectedScale" @change="handleFilterChange">
+        <option value="">T&#7845;t c&#7843; t&#7881; l&#7879;/size</option>
+        <option value="1:18">T&#7881; l&#7879; 1:18</option>
+        <option value="1:24">T&#7881; l&#7879; 1:24</option>
+        <option value="1:43">T&#7881; l&#7879; 1:43</option>
+        <option value="1:72">T&#7881; l&#7879; 1:72</option>
+        <option value="8cm">K&#237;ch th&#432;&#7899;c 8cm</option>
+        <option value="10cm">K&#237;ch th&#432;&#7899;c 10cm</option>
+        <option value="15cm">K&#237;ch th&#432;&#7899;c 15cm</option>
       </select>
-      <select class="select-filter">
-        <option>All Scales</option>
-        <option>1:18</option>
-        <option>1:24</option>
-        <option>1:43</option>
-        <option>1:72</option>
+      <select class="select-filter" v-model="selectedSort" @change="handleFilterChange">
+        <option value="featured">N&#7893;i b&#7853;t nh&#7845;t</option>
+        <option value="price_asc">Gi&#225;: Th&#7845;p - Cao</option>
+        <option value="price_desc">Gi&#225;: Cao - Th&#7845;p</option>
+        <option value="newest">M&#7899;i nh&#7845;t</option>
       </select>
-      <select class="select-filter">
-        <option>Sort: Featured</option>
-        <option>Price: Low–High</option>
-        <option>Price: High–Low</option>
-        <option>Newest First</option>
-      </select>
-      <button class="btn-explore">
+      <button class="btn-explore" @click="handleSearch">
         <svg
           width="15"
           height="15"
@@ -115,302 +124,518 @@
           <circle cx="11" cy="11" r="8" />
           <path d="M21 21l-4.35-4.35" />
         </svg>
-        Explore
+        T&#236;m ki&#7871;m
       </button>
     </div>
   </div>
 
-  <!-- ─── FEATURES ─── -->
-  <div class="features-bg">
-    <div style="max-width: 1280px; margin: 0 auto">
-      <div class="features-grid">
-        <div class="feature-item">
-          <div class="feature-icon">🚚</div>
-          <div>
-            <div class="feature-title">Free Shipping</div>
-            <div class="feature-desc">
-              On all orders over $80. Express 48h available.
-            </div>
-          </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon">🔒</div>
-          <div>
-            <div class="feature-title">Secure Packaging</div>
-            <div class="feature-desc">
-              Triple-layer foam protection, guaranteed intact.
-            </div>
-          </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon">✅</div>
-          <div>
-            <div class="feature-title">Authenticity Guarantee</div>
-            <div class="feature-desc">
-              Every model verified and certificate included.
-            </div>
-          </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon">↩️</div>
-          <div>
-            <div class="feature-title">30-Day Returns</div>
-            <div class="feature-desc">Hassle-free returns. No questions asked.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ─── FEATURED MODELS ─── -->
+  <!--  FEATURED MODELS  -->
   <div class="products-bg">
     <div class="section">
       <div class="section-header">
         <div class="section-title-wrap">
-          <div class="section-eyebrow">Hand-Selected</div>
-          <h2 class="section-title">Featured Models</h2>
+          <div class="section-eyebrow">L&#7921;a ch&#7885;n h&#224;ng &#273;&#7847;u</div>
+          <h2 class="section-title">S&#7843;n ph&#7849;m n&#7893;i b&#7853;t</h2>
         </div>
-        <a href="#" class="btn-view-all">View All →</a>
+        <a href="#" class="btn-view-all" @click.prevent="selectCategory(null)">Xem t&#7845;t c&#7843; &#8594;</a>
       </div>
 
       <div class="cat-tabs">
-        <button class="cat-tab active">All</button>
-        <button class="cat-tab">Automotive</button>
-        <button class="cat-tab">Architecture</button>
-        <button class="cat-tab">Aviation</button>
-        <button class="cat-tab">Military</button>
-        <button class="cat-tab">Limited Edition</button>
+        <button 
+          class="cat-tab" 
+          :class="{ active: selectedCategoryId === null }"
+          @click="selectCategory(null)"
+        >
+          T&#7845;t c&#7843;
+        </button>
+        <button 
+          v-for="cat in categories" 
+          :key="cat.id"
+          class="cat-tab"
+          :class="{ active: selectedCategoryId === cat.id }"
+          @click="selectCategory(cat.id)"
+        >
+          {{ cat.ten_danh_muc }}
+        </button>
       </div>
 
-      <div class="product-grid">
-        <!-- Card 1 -->
-        <div class="product-card">
-          <div class="product-badge badge-new">New</div>
-          <div class="product-img-wrap">
-            <div class="product-emoji">🏎️</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Bburago</div>
-            <div class="product-name">Ferrari SF90 Stradale</div>
-            <div class="product-scale">Scale 1:18 · Die-cast</div>
-            <div class="product-rating">
-              <span class="stars">★★★★★</span>
-              <span>(142)</span>
+      <div v-if="loading" class="empty-products">
+        <i class="fa-solid fa-circle-notch fa-spin"></i> &#272;ang t&#7843;i s&#7843;n ph&#7849;m...</div>
+      
+      <div v-else-if="products.length > 0">
+        <div class="product-grid">
+          <div 
+            v-for="product in products" 
+            :key="product.id" 
+            class="product-card"
+            @click="goToDetail(product.id)"
+          >
+            <!-- Badge -->
+            <div class="product-badge badge-new" v-if="product.tinh_trang === 1">Äang bÃ¡n</div>
+            <div class="product-badge badge-sale" v-else-if="product.tinh_trang === 0">Háº¿t hÃ ng</div>
+            <div class="product-badge badge-ltd" v-else-if="product.tinh_trang === 2">áº¨n</div>
+            
+            <div class="product-img-wrap">
+              <img :src="getProductImage(product)" :alt="product.ten_san_pham" class="product-img" />
             </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig">$289</span>
-                <span class="product-price">$249</span>
+            <div class="product-info">
+              <div class="product-brand">{{ product.danh_muc ? product.danh_muc.ten_danh_muc : 'MÃ´ hÃ¬nh' }}</div>
+              <div class="product-name truncate" :title="product.ten_san_pham">{{ product.ten_san_pham }}</div>
+              <div class="product-scale">{{ getProductScaleOrSize(product) }}</div>
+              <div class="product-rating">
+                <span class="stars"></span>
+                <span>(5.0)</span>
               </div>
-              <button class="btn-view">View</button>
+              <div class="product-footer">
+                <div class="product-price-group">
+                  <span class="product-price">{{ formatPrice(product.gia_co_ban) }}</span>
+                  <span class="product-price-orig" v-if="product.gia_goc && product.gia_goc > 0">
+                    {{ formatPrice(product.gia_goc) }}
+                  </span>
+                </div>
+                <button class="btn-view" @click.stop="goToDetail(product.id)">View</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Card 2 -->
-        <div class="product-card">
-          <div class="product-badge badge-ltd">Limited</div>
-          <div class="product-img-wrap">
-            <div class="product-emoji">🏛️</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Architecture Studio</div>
-            <div class="product-name">Empire State Building</div>
-            <div class="product-scale">Scale 1:500 · Resin</div>
-            <div class="product-rating">
-              <span class="stars">★★★★★</span>
-              <span>(87)</span>
-            </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig"></span>
-                <span class="product-price">$189</span>
-              </div>
-              <button class="btn-view">View</button>
-            </div>
-          </div>
+        <!-- Pagination -->
+        <div class="pagination-wrap" v-if="totalPages > 1">
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === 1"
+            @click="fetchProducts(currentPage - 1)"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <button 
+            v-for="page in totalPages" 
+            :key="page"
+            class="page-btn"
+            :class="{ active: currentPage === page }"
+            @click="fetchProducts(page)"
+          >
+            {{ page }}
+          </button>
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === totalPages"
+            @click="fetchProducts(currentPage + 1)"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
         </div>
-
-        <!-- Card 3 -->
-        <div class="product-card">
-          <div class="product-badge badge-sale">−20%</div>
-          <div class="product-img-wrap">
-            <div class="product-emoji">✈️</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Herpa Wings</div>
-            <div class="product-name">Airbus A380 Lufthansa</div>
-            <div class="product-scale">Scale 1:200 · Plastic</div>
-            <div class="product-rating">
-              <span class="stars">★★★★☆</span>
-              <span>(203)</span>
-            </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig">$159</span>
-                <span class="product-price">$127</span>
-              </div>
-              <button class="btn-view">View</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="product-card">
-          <div class="product-img-wrap">
-            <div class="product-emoji">⛵</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Mamoli</div>
-            <div class="product-name">HMS Victory — Admiral Nelson</div>
-            <div class="product-scale">Scale 1:100 · Wood Kit</div>
-            <div class="product-rating">
-              <span class="stars">★★★★★</span>
-              <span>(59)</span>
-            </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig"></span>
-                <span class="product-price">$349</span>
-              </div>
-              <button class="btn-view">View</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 5 -->
-        <div class="product-card">
-          <div class="product-badge badge-new">New</div>
-          <div class="product-img-wrap">
-            <div class="product-emoji">🚀</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Revell</div>
-            <div class="product-name">Saturn V Apollo Rocket</div>
-            <div class="product-scale">Scale 1:96 · Plastic Kit</div>
-            <div class="product-rating">
-              <span class="stars">★★★★★</span>
-              <span>(311)</span>
-            </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig">$99</span>
-                <span class="product-price">$79</span>
-              </div>
-              <button class="btn-view">View</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 6 -->
-        <div class="product-card">
-          <div class="product-badge badge-ltd">Limited</div>
-          <div class="product-img-wrap">
-            <div class="product-emoji">🏰</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Wrebbit 3D</div>
-            <div class="product-name">Neuschwanstein Castle</div>
-            <div class="product-scale">Scale 1:300 · Resin</div>
-            <div class="product-rating">
-              <span class="stars">★★★★☆</span>
-              <span>(44)</span>
-            </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig"></span>
-                <span class="product-price">$219</span>
-              </div>
-              <button class="btn-view">View</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 7 -->
-        <div class="product-card">
-          <div class="product-badge badge-sale">−15%</div>
-          <div class="product-img-wrap">
-            <div class="product-emoji">🚂</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Märklin</div>
-            <div class="product-name">ICE 3 High-Speed Train</div>
-            <div class="product-scale">Scale H0 · Die-cast</div>
-            <div class="product-rating">
-              <span class="stars">★★★★★</span>
-              <span>(177)</span>
-            </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig">$199</span>
-                <span class="product-price">$169</span>
-              </div>
-              <button class="btn-view">View</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 8 -->
-        <div class="product-card">
-          <div class="product-img-wrap">
-            <div class="product-emoji">🚁</div>
-          </div>
-          <div class="product-info">
-            <div class="product-brand">Forces of Valor</div>
-            <div class="product-name">UH-60 Black Hawk</div>
-            <div class="product-scale">Scale 1:72 · Die-cast</div>
-            <div class="product-rating">
-              <span class="stars">★★★★☆</span>
-              <span>(93)</span>
-            </div>
-            <div class="product-footer">
-              <div>
-                <span class="product-price-orig"></span>
-                <span class="product-price">$139</span>
-              </div>
-              <button class="btn-view">View</button>
-            </div>
-          </div>
-        </div>
+      </div>
+      
+      <div v-else class="empty-products">
+        KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m nÃ o phÃ¹ há»£p.
       </div>
     </div>
   </div>
+  <!--  FEATURES  -->
+<div class="features-bg">
+    <div style="max-width: 1280px; margin: 0 auto">
+      <div class="features-grid">
+        
+        <div class="feature-item">
+          <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-truck-fast"></i></div>
+          <div>
+            <div class="feature-title">Miễn Phí Giao Hàng</div>
+            <div class="feature-desc">
+              Áp dụng cho đơn hàng từ 500.000 ₫. Hỗ trợ giao hỏa tốc nội thành.
+            </div>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-box-open"></i></div>
+          <div>
+            <div class="feature-title">Đóng Gói An Toàn</div>
+            <div class="feature-desc">
+              Bọc chống sốc kỹ lưỡng, đảm bảo phôi in không gãy vỡ.
+            </div>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+          <div>
+            <div class="feature-title">Chất Lượng Đảm Bảo</div>
+            <div class="feature-desc">
+              Sử dụng nhựa in theo yêu cầu, đảm bảo độ bền và tính thẩm mỹ cao.
+            </div>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-rotate-left"></i></div>
+          <div>
+            <div class="feature-title">Hỗ Trợ Đổi Trả</div>
+            <div class="feature-desc">
+              Đổi mới hoặc in lại trong 7 ngày nếu có lỗi cong vênh từ xưởng.
+            </div>
+          </div>
+        </div>
 
-  <!-- ─── PROMO BANNER ─── -->
-  <div class="banner-strip">
+      </div>
+    </div>
+  </div>
+  <!--  PROMO BANNER  -->
+ <div class="banner-strip">
     <div class="banner-strip-inner">
       <div class="banner-content-left">
-        <span class="banner-tag">New Collection Drop</span>
-        <h2 class="banner-title">Automotive<br /><em>Legends</em><br />Series 2025</h2>
+        <span class="banner-tag">Bộ Sưu Tập In 3D</span>
+        <h2 class="banner-title">Nghệ Thuật<br /><em>In 3D</em><br />Đỉnh Cao</h2>
         <p class="banner-desc">
-          Twelve iconic machines from the golden era of motorsport. Each cast in
-          precise 1:18 scale with photo-etched detailing and opening components.
+          Khám phá các mẫu mô hình được chế tác bằng công nghệ in FDM và Resin tiên tiến. Bề mặt láng mịn, chi tiết siêu nét, hoàn hảo để trưng bày hoặc tự tay sơn phết sáng tạo.
         </p>
-        <button class="btn-banner">Shop the Collection →</button>
+        <button class="btn-banner">Khám Phá Ngay</button>
       </div>
       <div class="banner-visual">
         <div class="banner-deco"></div>
         <div class="banner-deco banner-deco-2"></div>
         <div class="banner-model">
-          <span class="banner-model-emoji">🏎️</span>
-          <div class="banner-model-name">Bugatti Chiron</div>
-          <div class="banner-model-price">$349</div>
+          <span class="banner-model-emoji"><i class="fa-solid fa-dragon"></i></span>
+          <div class="banner-model-name">Rồng Khớp Động</div>
+          <div class="banner-model-price">180.000 ₫</div>
         </div>
         <div class="banner-model">
-          <span class="banner-model-emoji">🚗</span>
-          <div class="banner-model-name">Porsche 959</div>
-          <div class="banner-model-price">$279</div>
+          <span class="banner-model-emoji"><i class="fa-solid fa-robot"></i></span>
+          <div class="banner-model-name">Mecha Gundam</div>
+          <div class="banner-model-price">350.000 ₫</div>
         </div>
         <div class="banner-model">
-          <span class="banner-model-emoji">🏁</span>
-          <div class="banner-model-name">McLaren F1</div>
-          <div class="banner-model-price">$319</div>
+          <span class="banner-model-emoji"><i class="fa-solid fa-cube"></i></span>
+          <div class="banner-model-name">Sa Bàn Diorama</div>
+          <div class="banner-model-price">290.000 ₫</div>
         </div>
       </div>
     </div>
   </div>
 </template>
 <script>
-export default {};
+import axios from "axios";
+
+export default {
+  name: "Home",
+  data() {
+    return {
+      products: [],
+      categories: [],
+      selectedCategoryId: null,
+      searchQuery: "",
+      selectedScale: "",
+      selectedSort: "featured",
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      loading: false,
+      suggestions: [],
+      showSuggestions: false,
+      suggestDebounceTimer: null,
+      suggestCache: {},
+    };
+  },
+  mounted() {
+    this.fetchCategories();
+    this.applyRouteFilters();
+  },
+  beforeUnmount() {
+    if (this.suggestDebounceTimer) clearTimeout(this.suggestDebounceTimer);
+  },
+  watch: {
+    "$route.query": {
+      handler() {
+        this.applyRouteFilters();
+      },
+      deep: true,
+    },
+    searchQuery() {
+      this.debouncedSuggest();
+    },
+  },
+  methods: {
+    debouncedSuggest() {
+      if (this.suggestDebounceTimer) clearTimeout(this.suggestDebounceTimer);
+      this.suggestDebounceTimer = setTimeout(() => {
+        this.fetchSuggestions();
+      }, 400);
+    },
+    async fetchSuggestions() {
+      const keyword = this.searchQuery.trim();
+      if (keyword.length < 2) {
+        this.suggestions = [];
+        return;
+      }
+
+      const cacheKey = `${keyword}|${this.selectedCategoryId || ""}`;
+      if (this.suggestCache[cacheKey]) {
+        this.suggestions = this.suggestCache[cacheKey];
+        return;
+      }
+
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/tim-kiem/goi-y", {
+          params: {
+            q: keyword,
+            id_danh_muc: this.selectedCategoryId || "",
+            limit: 8,
+          },
+        });
+        const list = res.data?.suggestions || [];
+        this.suggestCache[cacheKey] = list;
+        this.suggestions = list;
+      } catch {
+        this.suggestions = [];
+      }
+    },
+    hideSuggestionsWithDelay() {
+      setTimeout(() => {
+        this.showSuggestions = false;
+      }, 150);
+    },
+    async selectSuggestion(item) {
+      this.searchQuery = item.label || "";
+      this.showSuggestions = false;
+      await this.trackSuggestionClick(item);
+      this.handleSearch();
+    },
+    async trackSuggestionClick(item) {
+      try {
+        await axios.post("http://127.0.0.1:8000/api/tim-kiem/track", {
+          keyword: this.searchQuery,
+          suggestion: item.label || "",
+          type: item.type || "product",
+          id_san_pham: item.type === "product" ? item.id : null,
+          id_danh_muc: item.id_danh_muc || null,
+        });
+      } catch {}
+    },
+    applyRouteFilters() {
+      const query = this.$route.query || {};
+      this.searchQuery = query.search ? String(query.search) : "";
+      this.selectedCategoryId = query.id_danh_muc ? Number(query.id_danh_muc) : null;
+      this.fetchProducts(1);
+    },
+    async fetchCategories() {
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/danh-muc");
+        this.categories = response.data;
+      } catch (error) {
+        console.error("Li khi táº£i danh má»¥c:", error);
+      }
+    },
+    async fetchProducts(page = 1) {
+      this.loading = true;
+      this.currentPage = page;
+      try {
+        const params = {
+          page: this.currentPage,
+        };
+        
+        if (this.selectedCategoryId) {
+          params.id_danh_muc = this.selectedCategoryId;
+        }
+        
+        if (this.searchQuery.trim()) {
+          params.search = this.searchQuery.trim();
+        }
+        
+        if (this.selectedScale) {
+          params.scale = this.selectedScale;
+        }
+        
+        if (this.selectedSort && this.selectedSort !== "featured") {
+          params.sort = this.selectedSort;
+        }
+        
+        const response = await axios.get("http://127.0.0.1:8000/api/san-pham", { params });
+        const data = response.data;
+        
+        this.products = data.data;
+        this.totalPages = data.last_page;
+        this.totalItems = data.total;
+      } catch (error) {
+        console.error("Li khi táº£i sáº£n pháº©m:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    selectCategory(id) {
+      this.selectedCategoryId = id;
+      this.$router.push({
+        path: "/",
+        query: {
+          ...(this.searchQuery.trim() ? { search: this.searchQuery.trim() } : {}),
+          ...(this.selectedCategoryId ? { id_danh_muc: this.selectedCategoryId } : {}),
+        },
+      });
+    },
+    handleSearch() {
+      this.showSuggestions = false;
+      this.$router.push({
+        path: "/",
+        query: {
+          ...(this.searchQuery.trim() ? { search: this.searchQuery.trim() } : {}),
+          ...(this.selectedCategoryId ? { id_danh_muc: this.selectedCategoryId } : {}),
+        },
+      });
+    },
+    handleFilterChange() {
+      this.fetchProducts(1);
+    },
+    getProductImage(product) {
+      if (product.hinh_anhs && product.hinh_anhs.length > 0) {
+        const mainImg = product.hinh_anhs.find((img) => img.la_anh_dai_dien) || product.hinh_anhs[0];
+        const path = mainImg.duong_dan_anh;
+        if (path.startsWith("http")) {
+          return path;
+        }
+        return "http://127.0.0.1:8000" + (path.startsWith("/") ? "" : "/") + path;
+      }
+      return "https://via.placeholder.com/300?text=No+Image";
+    },
+    getProductScaleOrSize(product) {
+      const desc = product.mo_ta || "";
+      const match = desc.match(/1:\d+/);
+      if (match) return "T\u1ec9 l\u1ec7 " + match[0];
+
+      if (product.bien_thes && product.bien_thes.length > 0) {
+        const firstVariant = product.bien_thes[0];
+        if (firstVariant.thuoc_tinh && firstVariant.thuoc_tinh.size) {
+          return "K\u00edch th\u01b0\u1edbc: " + firstVariant.thuoc_tinh.size;
+        }
+      }
+      return "K\u00edch th\u01b0\u1edbc: Ti\u00eau chu\u1ea9n";
+    },
+    formatPrice(value) {
+      if (!value) return "0 \u0111";
+      return new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    },
+    goToDetail(id) {
+      this.$router.push("/product/" + id);
+    },
+  },
+};
 </script>
-<style></style>
+<style scoped>
+.search-field-wrap {
+  position: relative;
+}
+
+.suggestions-box {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  width: 100%;
+  border: none;
+  background: #fff;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #111827;
+}
+
+.suggestion-item:hover {
+  background: #f9fafb;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.06);
+}
+
+.empty-products {
+  text-align: center;
+  padding: 48px;
+  font-size: 16px;
+  color: #6b7280;
+  font-weight: 500;
+  width: 100%;
+}
+
+.empty-products i {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+  width: 100%;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: var(--red);
+  color: var(--red);
+  background-color: #fff;
+}
+
+.page-btn.active {
+  background-color: var(--red);
+  color: #fff;
+  border-color: var(--red);
+  box-shadow: 0 4px 12px rgba(215, 0, 24, 0.2);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.product-price-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.product-price-orig {
+  font-size: 12px;
+  color: #9ca3af;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+</style>
+

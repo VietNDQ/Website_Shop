@@ -40,6 +40,9 @@ class ThongTinCuaHangController extends Controller
             'mo_ta' => 'nullable|string',
             'facebook' => 'nullable|string|max:255',
             'instagram' => 'nullable|string|max:255',
+            'bank_id' => 'nullable|string|max:50',
+            'bank_account_no' => 'nullable|string|max:50',
+            'bank_account_name' => 'nullable|string|max:255',
         ]);
 
         $settings = ThongTinCuaHang::first();

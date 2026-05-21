@@ -33,9 +33,10 @@ class NguoiDungSeeder extends Seeder
 
         // Customers
         for ($i = 1; $i <= 10; $i++) {
+            $email = ($i === 1) ? "nguyenqviet3885@gmail.com" : "nguyenqviet3885+{$i}@gmail.com";
             $user = NguoiDung::create([
-                'ho_ten' => "Customer $i",
-                'email' => "customer$i@gmail.com",
+                'ho_ten' => $i === 1 ? "Nguyễn Quốc Việt" : "Khách Hàng Mẫu $i",
+                'email' => $email,
                 'mat_khau' => Hash::make('123456'),
                 'vai_tro' => 3,
                 'dang_hoat_dong' => true,

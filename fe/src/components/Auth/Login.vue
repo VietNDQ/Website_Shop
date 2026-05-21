@@ -15,6 +15,8 @@
         <p class="brand-tagline">Premium Models & Collectibles</p>
       </div>
 
+
+
       <!-- Login Form -->
       <form @submit.prevent="handleLogin" class="login-form">
         <!-- Welcoming text -->
@@ -27,14 +29,8 @@
           <label for="email" class="input-label">Tài khoản / Email</label>
           <div class="input-wrapper">
             <i class="fa-regular fa-envelope field-icon"></i>
-            <input
-              type="text"
-              id="email"
-              v-model="email"
-              placeholder="Nhập Email tại đây"
-              required
-              class="glass-input"
-            />
+            <input type="text" id="email" v-model="email" placeholder="Nhập Email tại đây" required
+              class="glass-input" />
           </div>
         </div>
 
@@ -42,29 +38,14 @@
         <div class="input-group">
           <div class="password-label-row">
             <label for="password" class="input-label">Mật khẩu</label>
-            <router-link to="/forgot-password" class="forgot-link"
-              >Quên mật khẩu?</router-link
-            >
+            <router-link to="/forgot-password" class="forgot-link">Quên mật khẩu?</router-link>
           </div>
           <div class="input-wrapper">
             <i class="fa-solid fa-lock field-icon"></i>
-            <input
-              :type="showPassword ? 'text' : 'password'"
-              id="password"
-              v-model="password"
-              placeholder="••••••••"
-              required
-              class="glass-input"
-            />
-            <button
-              type="button"
-              @click="showPassword = !showPassword"
-              class="eye-btn"
-            >
-              <i
-                class="fa-regular"
-                :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"
-              ></i>
+            <input :type="showPassword ? 'text' : 'password'" id="password" v-model="password" placeholder="••••••••"
+              required class="glass-input" />
+            <button type="button" @click="showPassword = !showPassword" class="eye-btn">
+              <i class="fa-regular" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
             </button>
           </div>
         </div>
@@ -72,11 +53,7 @@
         <!-- Remember Me Checkbox -->
         <div class="remember-row">
           <label class="remember-label">
-            <input
-              type="checkbox"
-              v-model="rememberMe"
-              class="glass-checkbox"
-            />
+            <input type="checkbox" v-model="rememberMe" class="glass-checkbox" />
             <span class="custom-checkbox"></span>
             Ghi nhớ tài khoản
           </label>
@@ -84,10 +61,8 @@
 
         <!-- Submit Button -->
         <button type="submit" class="submit-btn" :disabled="loading">
-          <span v-if="loading"
-            ><i class="fa-solid fa-circle-notch fa-spin"></i> Đang xử
-            lý...</span
-          >
+          <span v-if="loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang xử
+            lý...</span>
           <span v-else>
             Đăng Nhập
             <i class="fa-solid fa-arrow-right"></i>
@@ -96,35 +71,15 @@
       </form>
 
       <!-- Social Logins -->
-      <div class="social-login-section">
-        <div class="divider">
-          <span class="divider-text">Hoặc đăng nhập bằng</span>
-        </div>
-        <div class="social-buttons">
-          <button
-            @click="loginWithSocial('Google')"
-            class="social-btn google-btn"
-            type="button"
-          >
-            <i class="fa-brands fa-google social-icon"></i> Google
-          </button>
-          <button
-            @click="loginWithSocial('Facebook')"
-            class="social-btn facebook-btn"
-            type="button"
-          >
-            <i class="fa-brands fa-facebook-f social-icon"></i> Facebook
-          </button>
-        </div>
+      <div class="social-login-section google-login-wrapper">
+        <GoogleLogin :callback="LoginGoogle" :button-config="{ theme: 'outline', size: 'large', width: googleButtonWidth }" />
       </div>
 
       <!-- Card Footer -->
       <div class="card-footer">
         <p class="footer-link-text">
           Chưa có tài khoản?
-          <router-link to="/register" class="signup-link"
-            >Đăng ký ngay</router-link
-          >
+          <router-link to="/register" class="signup-link">Đăng ký ngay</router-link>
         </p>
       </div>
     </div>
@@ -133,6 +88,7 @@
 
 <script>
 import axios from "axios";
+import { useCartStore } from "../../store/cartStore";
 
 export default {
   name: "Login",
@@ -143,6 +99,7 @@ export default {
       rememberMe: false,
       showPassword: false,
       loading: false,
+      googleButtonWidth: 376,
     };
   },
   methods: {
@@ -178,6 +135,13 @@ export default {
         } else {
           // Lưu token cho khách hàng
           localStorage.setItem("token_client", token);
+          localStorage.setItem("ho_ten_client", user.ho_ten);
+
+          // Đồng bộ giỏ hàng với máy chủ
+          const cartStore = useCartStore();
+          await cartStore.syncCartWithBackend();
+
+          window.dispatchEvent(new Event("clientLoginUpdated"));
           this.showToast(`Chào mừng quay trở lại, ${user.ho_ten}!`, "success");
           this.$router.push("/");
         }
@@ -212,6 +176,136 @@ export default {
         alert(message);
       }
     },
+    LoginGoogle(response) {
+      console.log("Google Login Raw Response:", response);
+
+      let idToken = null;
+      if (response) {
+        if (typeof response === "string") {
+          idToken = response;
+        } else if (response.credential) {
+          idToken = response.credential;
+        } else if (response.id_token) {
+          idToken = response.id_token;
+        } else if (response.tokenId) {
+          idToken = response.tokenId;
+        }
+      }
+
+      if (!idToken) {
+        console.error("Failed to extract Google ID token from response:", response);
+        this.showToast("Không tìm thấy ID Token từ Google. Vui lòng kiểm tra Console log!", "error");
+        return;
+      }
+
+      const payload = {
+        'id_token': idToken,
+      };
+      axios
+        .post("http://127.0.0.1:8000/api/khach-hang/login-google", payload)
+        .then((res) => {
+          if (res.data.status) {
+            const token = res.data.token;
+            const vai_tro = res.data.vai_tro;
+            const ho_ten = res.data.ho_ten;
+
+            if (vai_tro === 1 || vai_tro === 2) {
+              // Lưu token cho admin/nhân viên
+              localStorage.setItem("token_admin", token);
+              localStorage.removeItem("token_client");
+              localStorage.removeItem("ho_ten_client");
+
+              this.showToast("Đăng nhập Hệ thống Quản trị viên thành công!", "success");
+              this.$router.push("/nhan-vien/dashboard");
+            } else {
+              // Lưu token cho khách hàng
+              localStorage.setItem("token_client", token);
+              localStorage.setItem("ho_ten_client", ho_ten);
+              localStorage.removeItem("token_admin");
+
+              // Đồng bộ giỏ hàng với máy chủ
+              const cartStore = useCartStore();
+              cartStore.syncCartWithBackend().then(() => {
+                window.dispatchEvent(new Event("clientLoginUpdated"));
+              });
+
+              this.showToast(`Chào mừng quay trở lại, ${ho_ten}!`, "success");
+              this.$router.push("/");
+            }
+          } else {
+            this.showToast(res.data.message, "error");
+          }
+        })
+        .catch((err) => {
+          let errorMessage = "Đã có lỗi xảy ra, vui lòng thử lại.";
+          if (err.response && err.response.data) {
+            if (err.response.data.errors) {
+              errorMessage = Object.values(err.response.data.errors).map(v => v[0]).join("\n");
+            } else if (err.response.data.message) {
+              errorMessage = err.response.data.message;
+            }
+          }
+          this.showToast(errorMessage, "error");
+        });
+    },
+    async kiemTraDangNhap() {
+      // 1. Kiểm tra token admin
+      const adminToken = localStorage.getItem("token_admin");
+      if (adminToken) {
+        try {
+          const res = await axios.get("http://127.0.0.1:8000/api/check-token", {
+            headers: {
+              Authorization: "Bearer " + adminToken
+            }
+          });
+          if (res.data.status && (res.data.vai_tro === 1 || res.data.vai_tro === 2)) {
+            this.$router.push("/nhan-vien/dashboard");
+            return;
+          }
+        } catch (error) {
+          localStorage.removeItem("token_admin");
+        }
+      }
+
+      // 2. Kiểm tra token khách hàng
+      const customerToken = localStorage.getItem("token_client");
+      if (customerToken) {
+        try {
+          const res = await axios.get("http://127.0.0.1:8000/api/check-token", {
+            headers: {
+              Authorization: 'Bearer ' + customerToken
+            }
+          });
+          if (res.data.status) {
+            this.$router.push("/");
+            return;
+          }
+        } catch (error) {
+          localStorage.removeItem("token_client");
+          localStorage.removeItem("ho_ten_client");
+        }
+      }
+    },
+    updateGoogleButtonWidth() {
+      const card = document.querySelector(".glass-login-card");
+      if (card) {
+        const style = window.getComputedStyle(card);
+        const paddingLeft = parseFloat(style.paddingLeft);
+        const paddingRight = parseFloat(style.paddingRight);
+        const cardWidth = card.clientWidth;
+        this.googleButtonWidth = Math.min(400, Math.max(200, cardWidth - paddingLeft - paddingRight));
+      } else {
+        this.googleButtonWidth = window.innerWidth < 480 ? 320 : 376;
+      }
+    }
+  },
+  mounted() {
+    this.kiemTraDangNhap();
+    this.updateGoogleButtonWidth();
+    window.addEventListener("resize", this.updateGoogleButtonWidth);
+  },
+  beforeUnmount() {
+    window.removeEventListener("resize", this.updateGoogleButtonWidth);
   },
 };
 </script>

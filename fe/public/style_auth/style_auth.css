@@ -3,7 +3,9 @@
 /* Center container covering entire screen with soft light background */
 .login-container {
   width: 100vw;
-  background: #f1f5f9;
+  min-height: 100vh;
+  background: url('/style_auth/background.jpg') no-repeat center center;
+  background-size: cover;
   font-family: 'DM Sans', sans-serif;
   display: flex;
   justify-content: center;
@@ -84,7 +86,7 @@
 
 /* Brand Section styling */
 .brand-section {
-  margin-bottom: 28px;
+  margin-bottom: 5px;
 }
 
 .logo-wrapper {
@@ -95,7 +97,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 auto 12px;
+  margin: 0 auto 8px;
   box-shadow: 0 8px 20px rgba(244, 63, 94, 0.25);
 }
 
@@ -115,7 +117,7 @@
 
 .brand-tagline {
   font-size: 13px;
-  color: #64748b;
+  color: #000000;
   margin: 4px 0 0 0;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -128,22 +130,22 @@
 
 .role-welcome-text {
   font-size: 13.5px;
-  color: #475569;
+  color: #000000;
   text-align: center;
   margin: 0 0 20px 0;
   line-height: 1.5;
 }
 
 .input-group {
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 
 .input-label {
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: #64748b;
-  margin-bottom: 6px;
+  color: #000000;
+  margin-bottom: 10px;
   letter-spacing: 0.02em;
 }
 
@@ -151,7 +153,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 0px;
 }
 
 .forgot-link {
@@ -210,7 +212,7 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #2d3034;
   cursor: pointer;
   padding: 4px;
   font-size: 15px;
@@ -218,12 +220,12 @@
 }
 
 .eye-btn:hover {
-  color: #475569;
+  color: #bd0505;
 }
 
 /* Custom Checkbox Row */
 .remember-row {
-  margin-bottom: 24px;
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
 }
@@ -232,7 +234,7 @@
   display: flex;
   align-items: center;
   font-size: 13.5px;
-  color: #475569;
+  color: #000000;
   cursor: pointer;
   position: relative;
   user-select: none;
@@ -287,6 +289,7 @@
 /* Submit Button */
 .submit-btn {
   width: 100%;
+  height: 40px;
   background: linear-gradient(135deg, #f43f5e, #8b5cf6);
   color: #ffffff;
   font-family: 'DM Sans', sans-serif;
@@ -294,7 +297,6 @@
   font-weight: 700;
   border: none;
   border-radius: 12px;
-  padding: 15px 0;
   cursor: pointer;
   box-shadow: 0 8px 25px rgba(244, 63, 94, 0.25);
   display: flex;
@@ -302,6 +304,7 @@
   align-items: center;
   gap: 8px;
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 15px 0;
 }
 
 .submit-btn:hover {
@@ -322,13 +325,50 @@
 
 /* Social Logins styling */
 .social-login-section {
-  margin-top: 26px;
+  margin-top: 9px;
 }
 
+.google-login-wrapper {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.google-login-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.btn-google-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%; /* Giới hạn chiều rộng theo thiết kế */
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Đổ bóng nhẹ */
+  color: #4a4a4a;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-google-custom:hover {
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
 .divider {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 100px;
 }
 
 .divider::before,
@@ -356,7 +396,7 @@
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 12px;
-  color: #475569;
+  color: #000000;
   font-family: 'DM Sans', sans-serif;
   font-size: 13.5px;
   font-weight: 600;
@@ -389,14 +429,14 @@
 
 /* Card Footer */
 .card-footer {
-  margin-top: 28px;
+  margin-top: 5px;
   border-top: 1px solid rgba(15, 23, 42, 0.05);
-  padding-top: 18px;
+  padding-top: 7px;
 }
 
 .footer-link-text {
   font-size: 13.5px;
-  color: #64748b;
+  color: #000000;
   margin: 0;
 }
 

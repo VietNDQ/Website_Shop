@@ -26,6 +26,8 @@ class NguoiDung extends Authenticatable
         'ngay_sinh',
         'gioi_thieu',
         'anh_dai_dien',
+        'tong_chi_tieu',
+        'diem_thanh_vien',
     ];
 
     protected $hidden = [

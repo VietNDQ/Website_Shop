@@ -19,6 +19,9 @@ class ThongTinCuaHang extends Model
         'dia_chi_kho',
         'mo_ta',
         'facebook',
-        'instagram'
+        'instagram',
+        'bank_id',
+        'bank_account_no',
+        'bank_account_name'
     ];
 }

@@ -12,6 +12,21 @@ const routes = [
         meta: { layout: 'client' }
     },
     {
+        path: '/thong-tin-ca-nhan',
+        component: () => import('../components/Client/Profile.vue'),
+        meta: { layout: 'client' }
+    },
+    {
+        path: '/gio-hang',
+        component: () => import('../components/Client/Cart.vue'),
+        meta: { layout: 'client' }
+    },
+    {
+        path: '/thanh-toan',
+        component: () => import('../components/Client/Checkout.vue'),
+        meta: { layout: 'client' }
+    },
+    {
         path: '/login',
         component: () => import('../components/Auth/Login.vue'),
         meta: { layout: 'default' }
@@ -24,6 +39,11 @@ const routes = [
     {
         path: '/forgot-password',
         component: () => import('../components/Auth/ForgotPassword.vue'),
+        meta: { layout: 'default' }
+    },
+    {
+        path: '/reset-password',
+        component: () => import('../components/Auth/ResetPassword.vue'),
         meta: { layout: 'default' }
     },
     {
@@ -46,7 +66,28 @@ const routes = [
 
 const router = createRouter({
     history: createWebHistory(),
-    routes: routes
+    routes: routes,
+    scrollBehavior(to, from, savedPosition) {
+        if (savedPosition) {
+            return savedPosition;
+        } else {
+            return { top: 0, behavior: 'smooth' };
+        }
+    }
 })
+
+let isInitialLoad = true;
+
+router.beforeEach((to, from, next) => {
+    if (isInitialLoad) {
+        isInitialLoad = false;
+        if (to.query.search) {
+            const newQuery = { ...to.query };
+            delete newQuery.search;
+            return next({ path: to.path, query: newQuery, replace: true });
+        }
+    }
+    next();
+});
 
 export default router

@@ -11,7 +11,7 @@
         <div class="logo-wrapper">
           <i class="fa-solid fa-cube logo-icon"></i>
         </div>
-        <h1 class="brand-name">BALAB</h1>
+        <h1 class="brand-name">TẠO TÀI KHOẢN BALAB</h1>
         <p class="brand-tagline">Premium Models & Collectibles</p>
       </div>
 
@@ -47,7 +47,7 @@
               type="email"
               id="email"
               v-model="email"
-              placeholder="nhap_email@vi-du.com"
+              placeholder="Nhập email@gmail.com"
               required
               class="glass-input"
             />
@@ -130,25 +130,7 @@
 
       <!-- Social Logins -->
       <div class="social-login-section">
-        <div class="divider">
-          <span class="divider-text">Hoặc đăng ký bằng</span>
-        </div>
-        <div class="social-buttons">
-          <button
-            @click="loginWithSocial('Google')"
-            class="social-btn google-btn"
-            type="button"
-          >
-            <i class="fa-brands fa-google social-icon"></i> Google
-          </button>
-          <button
-            @click="loginWithSocial('Facebook')"
-            class="social-btn facebook-btn"
-            type="button"
-          >
-            <i class="fa-brands fa-facebook-f social-icon"></i> Facebook
-          </button>
-        </div>
+
       </div>
 
       <!-- Card Footer -->

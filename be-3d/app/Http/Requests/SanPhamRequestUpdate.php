@@ -18,6 +18,7 @@ class SanPhamRequestUpdate extends FormRequest
             'id'           => 'required|numeric|exists:san_pham,id',
             'ten_san_pham' => 'required|string|max:255',
             'gia_co_ban'   => 'required|numeric',
+            'gia_goc'      => 'nullable|numeric',
             'id_danh_muc'  => 'nullable|numeric',
             'mo_ta'        => 'nullable|string',
             'sku'          => 'nullable|string|max:100',

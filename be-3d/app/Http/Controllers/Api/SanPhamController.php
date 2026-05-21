@@ -37,6 +37,7 @@ class SanPhamController extends Controller
                 'category'   => $sp->danhMuc ? $sp->danhMuc->ten_danh_muc : 'Chưa phân loại',
                 'id_danh_muc' => $sp->id_danh_muc,
                 'price'      => $sp->gia_co_ban,
+                'priceOrig'  => $sp->gia_goc ?: null,
                 'desc'       => $sp->mo_ta,
                 'stock'      => $tongTonKho,
                 'sku'        => $sku,
@@ -65,6 +66,7 @@ class SanPhamController extends Controller
             $sanPham = SanPham::create([
                 'ten_san_pham' => $request->ten_san_pham,
                 'gia_co_ban' => $request->gia_co_ban,
+                'gia_goc'    => $request->gia_goc ?: null,
                 'id_danh_muc' => $request->id_danh_muc,
                 'mo_ta' => $request->mo_ta,
                 'tinh_trang' => $tinhTrangMap[$request->tinh_trang] ?? 1,
@@ -135,6 +137,7 @@ class SanPhamController extends Controller
             $sanPham->update([
                 'ten_san_pham' => $request->ten_san_pham,
                 'gia_co_ban' => $request->gia_co_ban,
+                'gia_goc'    => $request->gia_goc ?: null,
                 'id_danh_muc' => $request->id_danh_muc,
                 'mo_ta' => $request->mo_ta,
                 'tinh_trang' => $tinhTrangMap[$request->tinh_trang] ?? $sanPham->tinh_trang,
@@ -155,6 +158,30 @@ class SanPhamController extends Controller
                         'gia_ban' => $request->gia_co_ban,
                         'so_luong_ton_kho' => $request->so_luong_ton_kho ?? 0,
                     ]);
+                }
+            }
+
+            // Xử lý xóa ảnh đại diện (khi user bấm nút ✕ mà không upload ảnh mới)
+            if ($request->filled('xoa_anh_dai_dien') && !$request->hasFile('hinh_anh')) {
+                $oldHinhAnh = HinhAnhSanPham::where('id_san_pham', $sanPham->id)->where('la_anh_dai_dien', true)->first();
+                if ($oldHinhAnh) {
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $oldHinhAnh->duong_dan_anh));
+                    $oldHinhAnh->delete();
+                }
+            }
+
+            // Xử lý xóa các ảnh gallery được chỉ định
+            if ($request->has('xoa_hinh_anh_phu')) {
+                $pathsToDelete = $request->input('xoa_hinh_anh_phu', []);
+                foreach ($pathsToDelete as $path) {
+                    $hinhAnh = HinhAnhSanPham::where('id_san_pham', $sanPham->id)
+                        ->where('duong_dan_anh', $path)
+                        ->where('la_anh_dai_dien', false)
+                        ->first();
+                    if ($hinhAnh) {
+                        Storage::disk('public')->delete(str_replace('/storage/', '', $hinhAnh->duong_dan_anh));
+                        $hinhAnh->delete();
+                    }
                 }
             }
 

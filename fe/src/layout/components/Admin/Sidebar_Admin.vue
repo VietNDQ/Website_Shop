@@ -902,8 +902,7 @@ export default {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 10px;
+  padding: 0 16px;
   height: 38px;
   border-radius: 8px;
   border: none;
@@ -921,12 +920,17 @@ export default {
   color: #ff6b7a;
 }
 .logout-btn .nav-icon {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
+  margin-right: 18px; /* mr-3 equivalent */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .logout-btn .nav-label {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
+  flex: none; /* Disable flex: 1 so it doesn't push the text away */
 }
 
 /* ─── CONFIRM LOGOUT MODAL ─── */

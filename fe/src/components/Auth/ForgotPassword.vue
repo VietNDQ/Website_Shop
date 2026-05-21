@@ -36,7 +36,7 @@
               type="email"
               id="email"
               v-model="email"
-              placeholder="nhap_email@vi-du.com"
+              placeholder="Nhập email@gmail.com"
               required
               class="glass-input"
             />
@@ -101,6 +101,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "ForgotPassword",
   data() {
@@ -111,7 +113,7 @@ export default {
     };
   },
   methods: {
-    handleForgotPassword() {
+    async handleForgotPassword() {
       if (!this.email) {
         this.showToast("Vui lòng nhập địa chỉ email của bạn!", "warning");
         return;
@@ -119,12 +121,26 @@ export default {
 
       this.loading = true;
 
-      // Simulate API call
-      setTimeout(() => {
+      try {
+        const response = await axios.post("http://127.0.0.1:8000/api/forgot-password", {
+          email: this.email,
+        });
+
         this.loading = false;
         this.isSent = true;
-        this.showToast("Email khôi phục đã được gửi thành công!", "success");
-      }, 1500);
+        this.showToast(response.data.message || "Email khôi phục đã được gửi thành công!", "success");
+      } catch (error) {
+        this.loading = false;
+        let errMsg = "Có lỗi xảy ra, vui lòng thử lại sau.";
+        if (error.response && error.response.data) {
+          if (error.response.data.message) {
+            errMsg = error.response.data.message;
+          } else if (error.response.data.errors && error.response.data.errors.email) {
+            errMsg = error.response.data.errors.email[0];
+          }
+        }
+        this.showToast(errMsg, "error");
+      }
     },
     showToast(message, type = "success") {
       if (this.$toast) {

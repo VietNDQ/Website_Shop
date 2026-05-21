@@ -4,68 +4,60 @@
     <div class="footer-main">
       <div class="footer-brand">
         <a href="#" class="footer-logo">MÔ HÌNH<span></span>BALAB</a>
-        <p class="footer-tagline">
-          The premier destination for precision scale models. Serving collectors
-          worldwide since 2009.
+       <p class="footer-tagline">
+          Điểm đến hàng đầu cho các mô hình thu nhỏ có độ chính xác cao. Đam mê và phục vụ giới sưu tầm từ năm 2024.
         </p>
         <div class="footer-socials">
-          <a href="#" class="social-btn">𝕏</a>
-          <a href="#" class="social-btn">in</a>
-          <a href="#" class="social-btn">📸</a>
-          <a href="#" class="social-btn">▶</a>
+          <a href="#" class="social-btn" title="Facebook">FB</a>
+          <a href="#" class="social-btn" title="Instagram">IG</a>
+          <a href="#" class="social-btn" title="TikTok">TK</a>
+          <a href="#" class="social-btn" title="YouTube">YT</a>
         </div>
       </div>
 
       <div>
-        <div class="footer-col-title">Shop</div>
+        <div class="footer-col-title">Sản Phẩm</div>
         <ul class="footer-links">
-          <li><a href="#">Automotive</a></li>
-          <li><a href="#">Architecture</a></li>
-          <li><a href="#">Aviation</a></li>
-          <li><a href="#">Military</a></li>
-          <li><a href="#">Ships & Vessels</a></li>
-          <li><a href="#">New Arrivals</a></li>
-          <li><a href="#">Sale</a></li>
+          <li><a href="#">Mô hình</a></li>
+          <li><a href="#">Khuyến mãi</a></li>
         </ul>
       </div>
 
       <div>
-        <div class="footer-col-title">Information</div>
+        <div class="footer-col-title">Thông Tin</div>
         <ul class="footer-links">
-          <li><a href="#">About Us</a></li>
-          <li><a href="#">Blog & Reviews</a></li>
-          <li><a href="#">Collector's Guide</a></li>
-          <li><a href="#">Scale Chart</a></li>
-          <li><a href="#">Brand Index</a></li>
-          <li><a href="#">Press</a></li>
+          <li><a href="#">Về chúng tôi</a></li>
+          <li><a href="#">Blog & Đánh giá</a></li>
+          <li><a href="#">Hướng dẫn sưu tầm</a></li>
+          <li><a href="#">Bảng tỷ lệ mô hình</a></li>
+          <li><a href="#">Thương hiệu</a></li>
         </ul>
       </div>
 
       <div>
-        <div class="footer-col-title">Support</div>
+        <div class="footer-col-title">Hỗ Trợ</div>
         <ul class="footer-links">
-          <li><a href="#">FAQ</a></li>
-          <li><a href="#">Shipping Policy</a></li>
-          <li><a href="#">Returns & Refunds</a></li>
-          <li><a href="#">Track My Order</a></li>
-          <li><a href="#">Contact Us</a></li>
-          <li><a href="#">Live Chat</a></li>
+          <li><a href="#">Câu hỏi thường gặp (FAQ)</a></li>
+          <li><a href="#">Chính sách giao hàng</a></li>
+          <li><a href="#">Đổi trả & Hoàn tiền</a></li>
+          <li><a href="#">Theo dõi đơn hàng</a></li>
+          <li><a href="#">Liên hệ</a></li>
         </ul>
       </div>
 
       <div>
-        <div class="footer-col-title">Newsletter</div>
+        <div class="footer-col-title">Đăng ký nhận tin</div>
         <div class="footer-newsletter">
           <p class="footer-newsletter-desc">
-            Get early access to new releases and exclusive collector deals.
+            Nhận thông tin sớm nhất về các đợt pre-order và ưu đãi độc quyền.
           </p>
           <div class="newsletter-input-wrap">
             <input
               class="newsletter-input"
               type="email"
-              placeholder="Your email address"
+              placeholder="Địa chỉ email của bạn"
             />
-            <button class="newsletter-btn">Đăng ký</button>
+            <router-link to="/login" class="newsletter-btn"><b>Đăng ký</b></router-link>
           </div>
         </div>
       </div>
@@ -73,22 +65,23 @@
 
     <div class="footer-bottom">
       <div class="footer-bottom-inner">
-        <span class="footer-copy"
-          >© 2025 Mô Hình BALAB. All rights reserved. Crafted with care for
-          collectors.</span
-        >
+        <span class="footer-copy">
+          © 2026 Mô Hình BALAB. Bảo lưu mọi quyền.
+        </span>
         <div class="footer-payments">
+          <div class="payment-tag">COD</div>
+          <div class="payment-tag">MOMO</div>
+          <div class="payment-tag">VNPAY</div>
+          <div class="payment-tag">ZALOPAY</div>
           <div class="payment-tag">VISA</div>
-          <div class="payment-tag">MC</div>
-          <div class="payment-tag">AMEX</div>
-          <div class="payment-tag">PAYPAL</div>
-          <div class="payment-tag">STRIPE</div>
         </div>
       </div>
     </div>
   </footer>
 </template>
+
 <script>
-export default {};
+export default {
+  name: 'FooterComponent'
+};
 </script>
-<style></style>

@@ -75,10 +75,10 @@
           <tr>
             <th style="color: #080616">#</th>
             <th style="color: #080616">Sản phẩm</th>
-            <th style="color: #080616">Danh mục</th>
+            <th class="whitespace-nowrap" style="color: #080616">Danh mục</th>
             <th style="color: #080616">Giá bán</th>
-            <th style="color: #080616">Tồn kho</th>
-            <th style="color: #080616">Trạng thái</th>
+            <th class="whitespace-nowrap" style="color: #080616">Tồn kho</th>
+            <th class="whitespace-nowrap" style="color: #080616">Trạng thái</th>
             <th style="color: #080616">Thao tác</th>
           </tr>
         </thead>
@@ -172,11 +172,26 @@
                   </div>
                   <div class="form-group">
                     <label>Giá bán (đ) <span class="req">*</span></label>
-                    <input type="number" v-model.number="form.price" required placeholder="0" />
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      :value="formatInputVND(form.price)"
+                      @input="form.price = parseVNDInput($event.target.value); $event.target.value = formatInputVND(form.price)"
+                      required
+                      placeholder="0"
+                      autocomplete="off"
+                    />
                   </div>
                   <div class="form-group">
                     <label>Giá gốc (nếu giảm giá)</label>
-                    <input type="number" v-model.number="form.priceOrig" placeholder="0" />
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      :value="formatInputVND(form.priceOrig)"
+                      @input="form.priceOrig = parseVNDInput($event.target.value); $event.target.value = formatInputVND(form.priceOrig)"
+                      placeholder="0"
+                      autocomplete="off"
+                    />
                   </div>
                   <div class="form-group">
                     <label>SKU <span class="req">*</span></label>
@@ -293,8 +308,15 @@
               </div>
 
               <div class="info-price-card">
-                <div class="detail-price-main">{{ formatVND(selectedProduct.price) }}</div>
-                <div class="detail-price-orig" v-if="selectedProduct.priceOrig">{{ formatVND(selectedProduct.priceOrig) }}</div>
+                <div class="detail-price-row">
+                  <div class="detail-price-main">{{ formatVND(selectedProduct.price) }}</div>
+                  <div class="detail-price-orig" v-if="selectedProduct.priceOrig && selectedProduct.priceOrig > 0">
+                    {{ formatVND(selectedProduct.priceOrig) }}
+                    <span class="sale-pct" v-if="selectedProduct.priceOrig > selectedProduct.price">
+                      -{{ Math.round((1 - selectedProduct.price / selectedProduct.priceOrig) * 100) }}%
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div class="info-spec-list">
@@ -368,7 +390,9 @@ export default {
         image: '',
         imageFile: null,
         gallery: [],       // preview URLs (string)
-        galleryFiles: []   // File objects to upload
+        galleryFiles: [],  // File objects to upload
+        deletedGalleryPaths: [], // paths of existing gallery images to delete
+        deletePrimaryImage: false // flag to delete primary image
       },
       statusMap: { active: 'Đang bán', out: 'Hết hàng', hidden: 'Ẩn' },
       products: [],
@@ -446,7 +470,22 @@ export default {
         return new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
         }).format(number);
+    },
+    // Format số thành chuỗi có dấu chấm ngàn để hiển thị trong input (không có ký hiệu đồng)
+    formatInputVND(value) {
+      if (!value && value !== 0) return '';
+      const num = Math.round(parseFloat(value));
+      if (isNaN(num) || num === 0) return '';
+      return num.toLocaleString('vi-VN');
+    },
+    // Parse chuỗi input (có thể chứa dấu chấm ngàn) thành số nguyên
+    parseVNDInput(str) {
+      if (!str) return '';
+      const num = parseInt(str.replace(/\./g, '').replace(/\D/g, ''), 10);
+      return isNaN(num) ? '' : num;
     },
     showToast(message, type = "success") {
       if (type === "success") {
@@ -477,6 +516,10 @@ export default {
       }
     },
     removePrimaryImage() {
+      // Nếu ảnh hiện tại là ảnh từ server (không phải base64 mới chọn), đánh dấu xóa
+      if (this.form.image && !this.form.image.startsWith('data:')) {
+        this.form.deletePrimaryImage = true;
+      }
       this.form.image = '';
       this.form.imageFile = null;
       if (this.$refs.primaryFileInput) {
@@ -503,8 +546,27 @@ export default {
       e.target.value = '';
     },
     removeGalleryImage(index) {
+      const imgUrl = this.form.gallery[index];
+      // Nếu ảnh là URL từ server (không phải base64 mới thêm), lưu path để gửi backend xóa
+      if (imgUrl && !imgUrl.startsWith('data:')) {
+        // Trích xuất path tương đối (bỏ domain)
+        const path = imgUrl.replace('http://127.0.0.1:8000', '');
+        this.form.deletedGalleryPaths.push(path);
+      } else {
+        // Ảnh mới thêm (base64), tìm index tương ứng trong galleryFiles
+        // Đếm số ảnh server trước index này để tính đúng index trong galleryFiles
+        let serverImgCount = 0;
+        for (let i = 0; i < index; i++) {
+          if (!this.form.gallery[i].startsWith('data:')) {
+            serverImgCount++;
+          }
+        }
+        const fileIndex = index - serverImgCount;
+        if (fileIndex >= 0 && fileIndex < this.form.galleryFiles.length) {
+          this.form.galleryFiles.splice(fileIndex, 1);
+        }
+      }
       this.form.gallery.splice(index, 1);
-      this.form.galleryFiles.splice(index, 1);
     },
     openViewModal(product) {
       this.selectedProduct = product;
@@ -533,7 +595,9 @@ export default {
           image: product.image || '',
           imageFile: null,
           gallery: product.gallery ? product.gallery.map(img => img.startsWith('http') ? img : 'http://127.0.0.1:8000' + img) : [],
-          galleryFiles: []  // galleryFiles luôn rỗng khi mở modal sửa
+          galleryFiles: [],  // galleryFiles luôn rỗng khi mở modal sửa
+          deletedGalleryPaths: [],
+          deletePrimaryImage: false
         };
         // Ghép domain cho ảnh từ storage
         if (this.form.image && !this.form.image.startsWith('http') && !this.form.image.startsWith('data:')) {
@@ -557,7 +621,9 @@ export default {
           image: '',
           imageFile: null,
           gallery: [],
-          galleryFiles: []
+          galleryFiles: [],
+          deletedGalleryPaths: [],
+          deletePrimaryImage: false
         };
       }
       this.showModal = true;
@@ -570,6 +636,9 @@ export default {
         const formData = new FormData();
         formData.append('ten_san_pham', this.form.name);
         formData.append('gia_co_ban', this.form.price);
+        if (this.form.priceOrig && this.form.priceOrig > 0) {
+          formData.append('gia_goc', this.form.priceOrig);
+        }
         formData.append('sku', this.form.sku);
         formData.append('so_luong_ton_kho', this.form.stock);
         formData.append('tinh_trang', this.form.status);
@@ -586,6 +655,18 @@ export default {
           this.form.galleryFiles.forEach(file => {
             formData.append('hinh_anh_phu[]', file);
           });
+        }
+
+        // Gửi danh sách ảnh gallery cần xóa
+        if (this.form.deletedGalleryPaths && this.form.deletedGalleryPaths.length > 0) {
+          this.form.deletedGalleryPaths.forEach(path => {
+            formData.append('xoa_hinh_anh_phu[]', path);
+          });
+        }
+
+        // Gửi flag xóa ảnh đại diện
+        if (this.form.deletePrimaryImage) {
+          formData.append('xoa_anh_dai_dien', '1');
         }
 
         const config = {
@@ -899,13 +980,13 @@ export default {
 }
 .gallery-thumbs {
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
+  gap: 3px;
+  flex-wrap: wrap;
   padding-bottom: 6px;
 }
 .thumb-item {
-  width: 60px;
-  height: 60px;
+  width: 89px;
+  height: 89px;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #cbd5e1;
@@ -966,13 +1047,16 @@ export default {
 }
 
 .info-price-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #fff1f2, #fef2f2);
+  border: 1px solid #fecdd3;
   border-radius: 12px;
   padding: 16px 20px;
+}
+.detail-price-row {
   display: flex;
   align-items: baseline;
   gap: 12px;
+  flex-wrap: wrap;
 }
 .detail-price-main {
   font-size: 26px;
@@ -980,9 +1064,22 @@ export default {
   color: #D70018;
 }
 .detail-price-orig {
-  font-size: 16px;
+  font-size: 15px;
   text-decoration: line-through;
   color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sale-pct {
+  display: inline-block;
+  background: #D70018;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 100px;
+  text-decoration: none;
 }
 
 .info-spec-list {

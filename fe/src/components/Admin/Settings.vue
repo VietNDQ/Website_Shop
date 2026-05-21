@@ -164,7 +164,133 @@
                 ></button>
               </div>
               <div class="pm-config" v-if="pm.active && pm.hasConfig">
-                <div class="form-grid" style="margin-top: 14px">
+                <!-- Cấu hình cho Chuyển khoản ngân hàng -->
+                <div v-if="pm.key === 'bank'" class="bank-accounts-section" style="margin-top: 14px;">
+                  
+                  <!-- Nút thêm tài khoản và tiêu đề -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #475569;">Danh sách tài khoản ngân hàng nhận tiền:</span>
+                    <button 
+                      v-if="!showAddForm"
+                      type="button" 
+                      class="btn-primary" 
+                      style="padding: 6px 12px; font-size: 12px; height: 32px;"
+                      @click="showAddForm = true"
+                    >
+                      Thêm số tài khoản
+                    </button>
+                  </div>
+
+                  <!-- Form thêm tài khoản ngân hàng -->
+                  <div v-if="showAddForm" class="card" style="border: 1px solid #cbd5e0; padding: 16px; border-radius: 8px; margin-bottom: 16px; background: #fff; box-shadow: none;">
+                    <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Thêm tài khoản ngân hàng mới</div>
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                      <div class="form-group">
+                        <label>Ngân hàng <span class="req">*</span></label>
+                        <select v-model="newAccount.bank_id" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-weight: 600; outline: none; background: #fff;">
+                          <option value="">-- Chọn ngân hàng --</option>
+                          <option v-for="b in banks" :key="b.id" :value="b.id">
+                            {{ b.name }}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>Số tài khoản <span class="req">*</span></label>
+                        <input
+                          type="text"
+                          v-model="newAccount.bank_account_no"
+                          placeholder="Nhập số tài khoản ngân hàng"
+                        />
+                      </div>
+                      <div class="form-group span-2">
+                        <label>Tên chủ tài khoản <span class="req">*</span></label>
+                        <input
+                          type="text"
+                          v-model="newAccount.bank_account_name"
+                          placeholder="Nhập tên chủ tài khoản (viết hoa không dấu)"
+                        />
+                      </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+                      <button type="button" class="btn-ghost" style="padding: 6px 16px; border-radius: 8px;" @click="cancelAddAccount">Hủy</button>
+                      <button type="button" class="btn-primary" style="padding: 6px 16px; border-radius: 8px;" @click="addBankAccount">Lưu tài khoản</button>
+                    </div>
+                  </div>
+
+                  <!-- Danh sách tài khoản ngân hàng -->
+                  <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #fff;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                      <thead>
+                        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 700;">
+                          <th style="padding: 12px 16px;">Ngân hàng</th>
+                          <th style="padding: 12px 16px;">Số tài khoản</th>
+                          <th style="padding: 12px 16px;">Chủ tài khoản</th>
+                          <th style="padding: 12px 16px; text-align: center;">Trạng thái</th>
+                          <th style="padding: 12px 16px; text-align: right;">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-if="bankAccounts.length === 0">
+                          <td colspan="5" style="padding: 20px; text-align: center; color: #64748b;">
+                            Chưa có tài khoản ngân hàng nào. Vui lòng bấm "Thêm số tài khoản" để cấu hình.
+                          </td>
+                        </tr>
+                        <tr 
+                          v-for="acc in bankAccounts" 
+                          :key="acc.id" 
+                          style="border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 500;"
+                          :style="{ background: acc.is_active ? '#f0fdf4' : 'transparent' }"
+                        >
+                          <td style="padding: 12px 16px; text-transform: uppercase; font-weight: 700; color: #1e3a8a;">
+                            {{ acc.bank_id }}
+                          </td>
+                          <td style="padding: 12px 16px; font-family: monospace; font-size: 14px; font-weight: 600;">
+                            {{ acc.bank_account_no }}
+                          </td>
+                          <td style="padding: 12px 16px; text-transform: uppercase; font-weight: 600;">
+                            {{ acc.bank_account_name }}
+                          </td>
+                          <td style="padding: 12px 16px; text-align: center;">
+                            <span 
+                              v-if="acc.is_active" 
+                              style="display: inline-block; background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: 1px solid #bbf7d0;"
+                            >
+                              Đang sử dụng
+                            </span>
+                            <span 
+                              v-else 
+                              style="display: inline-block; background: #fef9c3; color: #854d0e; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: 1px solid #fef08a;"
+                            >
+                              Không sử dụng
+                            </span>
+                          </td>
+                          <td style="padding: 12px 16px; text-align: right; display: flex; gap: 8px; justify-content: flex-end; align-items: center; min-height: 48px;">
+                            <button 
+                              v-if="!acc.is_active"
+                              type="button"
+                              class="btn-primary"
+                              style="padding: 4px 10px; font-size: 11px; height: 26px; background: #3b82f6; border-color: #3b82f6; border-radius: 6px;"
+                              @click="activateBankAccount(acc.id)"
+                            >
+                              Sử dụng
+                            </button>
+                            <button
+                              v-if="bankAccounts.length > 1 || !acc.is_active"
+                              type="button"
+                              style="padding: 4px 8px; font-size: 11px; height: 26px; background: #ef4444; border: 1px solid #ef4444; color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600;"
+                              @click="deleteBankAccount(acc.id)"
+                            >
+                              Xóa
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Cấu hình cho các phương thức khác (VNPAY, MoMo) -->
+                <div v-else class="form-grid" style="margin-top: 14px">
                   <div class="form-group">
                     <label>Merchant ID</label>
                     <input
@@ -221,6 +347,30 @@ export default {
         facebook: "https://facebook.com/mohinhBALAB",
         instagram: "https://instagram.com/mohinhBALAB",
       },
+      bankAccounts: [],
+      showAddForm: false,
+      newAccount: {
+        bank_id: "",
+        bank_account_no: "",
+        bank_account_name: "",
+      },
+      banks: [
+        { id: "vietinbank", name: "VietinBank (ICB)" },
+        { id: "vietcombank", name: "Vietcombank (VCB)" },
+        { id: "techcombank", name: "Techcombank (TCB)" },
+        { id: "bidv", name: "BIDV" },
+        { id: "agribank", name: "Agribank (VBA)" },
+        { id: "mbbank", name: "MBBank (MB)" },
+        { id: "acb", name: "ACB" },
+        { id: "vpbank", name: "VPBank (VPB)" },
+        { id: "tpbank", name: "TPBank (TPB)" },
+        { id: "sacombank", name: "Sacombank (STB)" },
+        { id: "vib", name: "VIB" },
+        { id: "shb", name: "SHB" },
+        { id: "hdbank", name: "HDBank" },
+        { id: "msb", name: "MSB" },
+        { id: "ocb", name: "OCB" },
+      ],
       shippingMethods: [
         {
           key: "standard",
@@ -289,6 +439,7 @@ export default {
   },
   mounted() {
     this.fetchStoreInfo();
+    this.fetchBankAccounts();
   },
   methods: {
     getConfig() {
@@ -318,6 +469,71 @@ export default {
       } catch (err) {
         console.error("Không thể lấy thông tin cửa hàng:", err);
       }
+    },
+    async fetchBankAccounts() {
+      try {
+        const res = await axios.get(
+          "http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang",
+          this.getConfig()
+        );
+        this.bankAccounts = res.data;
+      } catch (err) {
+        console.error("Không thể lấy danh sách tài khoản ngân hàng:", err);
+      }
+    },
+    async addBankAccount() {
+      if (!this.newAccount.bank_id || !this.newAccount.bank_account_no || !this.newAccount.bank_account_name) {
+        this.showToast("Vui lòng điền đầy đủ các thông tin bắt buộc!", "error");
+        return;
+      }
+      try {
+        const res = await axios.post(
+          "http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang",
+          this.newAccount,
+          this.getConfig()
+        );
+        this.showToast(res.data.message || "Thêm tài khoản thành công!", "success");
+        this.newAccount = { bank_id: "", bank_account_no: "", bank_account_name: "" };
+        this.showAddForm = false;
+        await this.fetchBankAccounts();
+      } catch (err) {
+        const errMsg = err.response?.data?.message || "Có lỗi xảy ra khi lưu tài khoản ngân hàng!";
+        this.showToast(errMsg, "error");
+      }
+    },
+    async activateBankAccount(id) {
+      try {
+        const res = await axios.post(
+          `http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang/${id}/kich-hoat`,
+          {},
+          this.getConfig()
+        );
+        this.showToast(res.data.message || "Kích hoạt tài khoản thành công!", "success");
+        await this.fetchBankAccounts();
+      } catch (err) {
+        const errMsg = err.response?.data?.message || "Không thể kích hoạt tài khoản!";
+        this.showToast(errMsg, "error");
+      }
+    },
+    async deleteBankAccount(id) {
+      if (!confirm("Bạn có chắc chắn muốn xóa tài khoản ngân hàng này?")) {
+        return;
+      }
+      try {
+        const res = await axios.delete(
+          `http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang/${id}`,
+          this.getConfig()
+        );
+        this.showToast(res.data.message || "Xóa tài khoản thành công!", "success");
+        await this.fetchBankAccounts();
+      } catch (err) {
+        const errMsg = err.response?.data?.message || "Không thể xóa tài khoản!";
+        this.showToast(errMsg, "error");
+      }
+    },
+    cancelAddAccount() {
+      this.newAccount = { bank_id: "", bank_account_no: "", bank_account_name: "" };
+      this.showAddForm = false;
     },
     async saveStoreInfo() {
       if (!this.store.ten_thuong_hieu) {

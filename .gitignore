@@ -1,5 +1,5 @@
 # Environment files
-.env
+/.env
 
 # Scratch files
 scratch_diff.txt

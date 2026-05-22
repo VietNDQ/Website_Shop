@@ -25,7 +25,7 @@
       <div class="dash-card dash-orders">
         <div class="card-header">
           <h2 class="card-title">Đơn hàng gần đây</h2>
-          <a href="#" class="card-link">Xem tất cả</a>
+          <router-link to="/nhan-vien/orders" class="card-link">Xem tất cả</router-link>
         </div>
         <table class="orders-table">
           <thead>
@@ -62,12 +62,15 @@
       <div class="dash-card dash-top-products">
         <div class="card-header">
           <h2 class="card-title">Sản phẩm bán chạy</h2>
-          <a href="#" class="card-link">Chi tiết</a>
+          <router-link to="/nhan-vien/products" class="card-link">Chi tiết</router-link>
         </div>
         <div class="top-products-list">
           <div class="top-product-item" v-for="(p, i) in topProducts" :key="p.name">
             <div class="tp-rank">{{ i + 1 }}</div>
-            <div class="tp-emoji">{{ p.emoji }}</div>
+            <div class="tp-image-container">
+              <img v-if="p.image" :src="p.image.startsWith('http') ? p.image : '' + p.image" class="tp-img" />
+              <div v-else class="tp-emoji">📦</div>
+            </div>
             <div class="tp-info">
               <p class="tp-name">{{ p.name }}</p>
               <div class="tp-bar-wrap">
@@ -110,7 +113,7 @@
           <h2 class="card-title">Thao tác nhanh</h2>
         </div>
         <div class="quick-grid">
-          <button class="quick-btn" v-for="q in quickActions" :key="q.label">
+          <button class="quick-btn" v-for="q in quickActions" :key="q.label" @click="handleQuickAction(q.label)">
             <div class="quick-icon" :style="{ background: q.bg }">
               <span v-html="q.icon"></span>
             </div>
@@ -124,11 +127,16 @@
 
 <script>
 import axios from 'axios';
+import { useToast } from 'vue-toastification';
 
-const BASE = 'http://127.0.0.1:8000/api/quan-ly';
+const BASE = '/api/quan-ly';
 
 export default {
   name: "AdminDashboard",
+  setup() {
+    const toast = useToast();
+    return { toast };
+  },
   data() {
     return {
       loading: true,
@@ -175,13 +183,31 @@ export default {
       }
     },
     statusLabel(s) {
-      const map = { delivered: "Đã giao", shipping: "Đang giao", pending: "Chờ xử lý", cancelled: "Đã huỷ" };
+      const map = { 
+        delivered: "Đã giao", 
+        shipping: "Đang giao", 
+        pending: "Chờ xử lý", 
+        preparing: "Đang chuẩn bị",
+        refunded: "Hoàn tiền",
+        cancelled: "Đã huỷ" 
+      };
       return map[s] || s;
+    },
+    handleQuickAction(label) {
+      if (label === "Thêm SP") {
+        this.$router.push('/nhan-vien/products');
+      } else if (label === "Tạo đơn") {
+        this.$router.push('/nhan-vien/orders');
+      } else if (label === "Xuất BC") {
+        this.$router.push('/nhan-vien/analytics');
+      } else if (label === "Thông báo") {
+        this.toast.info('Thông báo mới nhất đang được đồng bộ!');
+      }
     },
   },
 };
 </script>
 
 <style scoped>
-@import "/style_admin/dashboard.css";
+@import "../../../public/style_admin/dashboard.css";
 </style>

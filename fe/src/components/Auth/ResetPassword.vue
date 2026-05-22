@@ -178,7 +178,7 @@ export default {
       this.loading = true;
 
       try {
-        const response = await axios.post("http://127.0.0.1:8000/api/reset-password", {
+        const response = await axios.post("/api/reset-password", {
           email: this.email,
           token: this.token,
           mat_khau: this.password,

@@ -313,128 +313,200 @@
               <div class="social-links-body">
                 <div class="social-row-item">
                   <div class="social-left">
-                    <img src="https://lh3.googleusercontent.com/COxit4t2yaZsFoTR26YtFcSEj2gO5tTyYusA2QLJa56OBxKDHj999xt5EC996Ea67XCc" alt="Google" class="social-logo" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="social-logo" />
                     <span class="social-name">Google</span>
-                    <span class="badge-linked">Đã liên kết</span>
+                    <span v-if="user.google_id" class="badge-linked">Đã liên kết</span>
                   </div>
-                  <button class="btn-social-action unbind">Hủy liên kết</button>
-                </div>
-                <div class="social-row-item">
-                  <div class="social-left">
-                    <img src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/zalo-icon.png" alt="Zalo" class="social-logo" />
-                    <span class="social-name">Zalo</span>
-                  </div>
-                  <button class="btn-social-action bind">Liên kết</button>
+                  <button v-if="user.google_id" class="btn-social-action unbind" @click="unlinkSocial('google')" :disabled="linking">Hủy liên kết</button>
+                  <GoogleLogin v-else :callback="linkGoogle" :button-config="{ theme: 'outline', size: 'medium', text: 'signin', shape: 'rectangular' }" />
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TAB 3: ORDER HISTORY -->
+        <!-- TAB 3: ORDER HISTORY / ĐƠN MUA -->
         <div v-else-if="activeTab === 'orders'" class="tab-pane">
-          <div class="content-header">
-            <h2>Lịch sử mua hàng</h2>
-            <p>Xem danh sách các đơn hàng bạn đã đặt và trạng thái giao hàng</p>
+          <div class="content-header order-history-header">
+            <h2>Đơn hàng mua</h2>
           </div>
 
-          <div v-if="orders.length === 0" class="empty-state">
+          <!-- Shopee Tab Bar Navigation -->
+          <div class="order-tabs-nav">
+            <button 
+              class="tab-nav-btn" 
+              :class="{ active: activeOrderTab === 'all' }"
+              @click="activeOrderTab = 'all'"
+            >
+              Tất cả
+            </button>
+            <button 
+              class="tab-nav-btn" 
+              :class="{ active: activeOrderTab === 'pending' }"
+              @click="activeOrderTab = 'pending'"
+            >
+              Chờ thanh toán
+            </button>
+            <button 
+              class="tab-nav-btn" 
+              :class="{ active: activeOrderTab === 'preparing' }"
+              @click="activeOrderTab = 'preparing'"
+            >
+              Vận chuyển
+            </button>
+            <button 
+              class="tab-nav-btn" 
+              :class="{ active: activeOrderTab === 'shipping' }"
+              @click="activeOrderTab = 'shipping'"
+            >
+              Chờ giao hàng
+            </button>
+            <button 
+              class="tab-nav-btn" 
+              :class="{ active: activeOrderTab === 'completed' }"
+              @click="activeOrderTab = 'completed'"
+            >
+              Hoàn thành
+            </button>
+            <button 
+              class="tab-nav-btn" 
+              :class="{ active: activeOrderTab === 'cancelled' }"
+              @click="activeOrderTab = 'cancelled'"
+            >
+              Đã hủy
+            </button>
+            <button 
+              class="tab-nav-btn" 
+              :class="{ active: activeOrderTab === 'refunded' }"
+              @click="activeOrderTab = 'refunded'"
+            >
+              Trả hàng/Hoàn tiền
+            </button>
+          </div>
+
+          <!-- Real-time Order Search Bar -->
+          <div class="order-search-wrapper">
+            <div class="order-search-box">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input 
+                type="text" 
+                v-model="orderSearchQuery" 
+                placeholder="Bạn có thể tìm kiếm theo ID đơn hàng hoặc Tên sản phẩm"
+                class="order-search-input"
+              />
+            </div>
+          </div>
+
+          <div v-if="filteredOrders.length === 0" class="empty-state">
             <span class="empty-icon">📦</span>
             <h3>Chưa có đơn hàng nào</h3>
-            <p>
+            <p v-if="orderSearchQuery">
+              Không tìm thấy đơn hàng nào phù hợp với tìm kiếm của bạn.
+            </p>
+            <p v-else>
               Hãy khám phá các sản phẩm tuyệt vời của chúng tôi và đặt hàng nhé!
             </p>
-            <router-link to="/" class="btn-primary-inline"
-              >Mua sắm ngay</router-link
-            >
+            <router-link to="/" class="btn-primary-inline">Mua sắm ngay</router-link>
           </div>
 
-          <div v-else class="orders-list">
-            <div v-for="order in orders" :key="order.id" class="order-card">
-              <div class="order-header-row">
-                <div>
-                  <span class="order-code-title"
-                    >Đơn hàng: <strong>{{ order.ma_don_hang }}</strong></span
-                  >
-                  <span class="order-date-text"
-                    >Ngày đặt: {{ formatDate(order.tao_luc) }} <span style="margin-left: 15px; color: #4b5563;">Thời gian: {{ formatTime(order.tao_luc) }}</span></span
-                  >
+          <div v-else class="orders-list order-scroll-container">
+            <div v-for="order in filteredOrders" :key="order.id" class="order-card-shopee">
+              <!-- Card Header: Order code + Status -->
+              <div class="order-card-header-slim">
+                <div class="order-code-info">
+                  <i class="fa-solid fa-box-open order-icon-sm"></i>
+                  <span class="order-code-txt">{{ order.ma_don_hang }}</span>
                 </div>
-                <div>
-                  <span
-                    class="status-badge"
-                    :class="getOrderStatusClass(order.trang_thai)"
-                  >
-                    {{ getOrderStatusText(order.trang_thai) }}
+                <div class="order-status-desc">
+                  <span v-if="order.trang_thai === 'dang_giao'" class="shipping-info">
+                    <i class="fa-solid fa-truck-fast"></i> Đơn hàng đang được giao
+                  </span>
+                  <span v-else-if="order.trang_thai === 'da_giao' || order.trang_thai === 'hoan_thanh'" class="shipping-info text-success">
+                    <i class="fa-solid fa-circle-check"></i> Đơn hàng đã giao thành công
+                  </span>
+                  <span class="status-shopee-txt" :class="getOrderStatusClass(order.trang_thai)">
+                    {{ getOrderStatusText(order.trang_thai).toUpperCase() }}
                   </span>
                 </div>
               </div>
 
-              <!-- Order items -->
-              <div class="order-items">
-                <div
-                  v-for="detail in order.chi_tiets"
-                  :key="detail.id"
-                  class="order-item-row"
-                >
-                  <div class="item-info">
-                    <span class="item-name">{{
-                      detail.ten_bien_the_luc_mua
-                    }}</span>
-                    <span class="item-qty">x {{ detail.so_luong }}</span>
+              <!-- Line Items -->
+              <div class="order-card-items">
+                <div v-for="detail in order.chi_tiets" :key="detail.id" class="order-item-shopee-row">
+                  <div class="item-img-wrapper">
+                    <img :src="getProductImage(detail)" class="item-image-shopee" alt="Product image" />
                   </div>
-                  <span class="item-price">{{
-                    formatPrice(detail.thanh_tien)
-                  }}</span>
-                </div>
-              </div>
-
-              <!-- Order footer price -->
-              <div class="order-summary-footer">
-                <div class="summary-details">
-                  <div class="summary-line">
-                    <span>Tổng tiền hàng:</span>
-                    <span>{{ formatPrice(order.tong_tien_hang) }}</span>
+                  <div class="item-details-shopee">
+                    <div class="item-title-shopee">{{ getProductName(detail) }}</div>
+                    <div class="item-variant-shopee">Phân loại hàng: {{ getProductVariantName(detail) }}</div>
+                    <div class="item-qty-shopee">x{{ detail.so_luong }}</div>
+                    
+                    <!-- Inline reviews for completed orders -->
+                    <div v-if="order.trang_thai === 'da_giao' || order.trang_thai === 'hoan_thanh'" class="item-review-action">
+                      <button
+                        v-if="detail.can_review"
+                        type="button"
+                        class="btn-review-now-sm"
+                        @click="openReviewModal(order, detail)"
+                      >
+                        Đánh giá ngay
+                      </button>
+                      <span v-else-if="detail.is_reviewed" class="reviewed-badge-sm">
+                        Đã đánh giá
+                      </span>
+                      <span v-else class="review-expired-sm">
+                        Hết hạn
+                      </span>
+                    </div>
                   </div>
-                  <div class="summary-line" v-if="order.tien_duoc_giam > 0">
-                    <span>Mã giảm giá:</span>
-                    <span class="discount-txt"
-                      >-{{ formatPrice(order.tien_duoc_giam) }}</span
-                    >
-                  </div>
-                  <div class="summary-line">
-                    <span>Phí vận chuyển:</span>
-                    <span>{{ formatPrice(order.phi_giao_hang) }}</span>
-                  </div>
-                  <div class="summary-line total">
-                    <span>Tổng thanh toán:</span>
-                    <span class="total-price">{{
-                      formatPrice(order.tong_thanh_toan)
-                    }}</span>
+                  <div class="item-price-shopee">
+                    <span
+                      v-if="getProductOriginalPrice(detail) && getProductOriginalPrice(detail) > detail.don_gia"
+                      class="original-price"
+                    >{{ formatPrice(getProductOriginalPrice(detail)) }}</span>
+                    <span class="current-price">{{ formatPrice(detail.don_gia) }}</span>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Pagination Controls -->
-            <div v-if="ordersPagination.last_page > 1" class="pagination-container">
-              <button 
-                type="button"
-                class="btn-page" 
-                :disabled="ordersPagination.current_page === 1"
-                @click="loadOrders(ordersPagination.current_page - 1)"
-              >
-                ‹ Trước
-              </button>
-              <span class="page-info">Trang {{ ordersPagination.current_page }} / {{ ordersPagination.last_page }}</span>
-              <button 
-                type="button"
-                class="btn-page" 
-                :disabled="ordersPagination.current_page === ordersPagination.last_page"
-                @click="loadOrders(ordersPagination.current_page + 1)"
-              >
-                Sau ›
-              </button>
+              <!-- Total price and summaries -->
+              <div class="order-card-totals">
+                <div class="totals-line-shopee">
+                  <span class="totals-label">
+                    <i class="fa-solid fa-shield-halved text-primary"></i> Thành tiền:
+                  </span>
+                  <span class="totals-value">{{ formatPrice(order.tong_thanh_toan) }}</span>
+                </div>
+              </div>
+
+              <!-- Card Actions Footer -->
+              <div class="order-card-actions">
+                <div class="actions-hint">
+                  <span v-if="order.trang_thai === 'da_huy'" class="hint-text hint-cancelled">
+                    <i class="fa-solid fa-ban"></i> Đơn hàng đã được hủy thành công.
+                    <span v-if="order.ly_do_huy" class="cancel-reason-inline"> – Lý do: {{ order.ly_do_huy }}</span>
+                  </span>
+                </div>
+                <div class="actions-buttons">
+                  <!-- Cancel button for pending orders -->
+                  <button 
+                    v-if="order.trang_thai === 'cho_xu_ly'" 
+                    class="btn-shopee btn-outline-cancel"
+                    @click="openCancelOrderModal(order)"
+                  >
+                    Hủy đơn hàng
+                  </button>
+                  
+                  <!-- Buy Again button for completed/cancelled orders -->
+                  <button 
+                    v-if="order.trang_thai === 'da_giao' || order.trang_thai === 'hoan_thanh' || order.trang_thai === 'da_huy'" 
+                    class="btn-shopee btn-primary-buy"
+                    @click="openBuyAgainModal(order)"
+                  >
+                    <i class="fa-solid fa-cart-plus"></i> Mua Lại
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -480,7 +552,6 @@
         <div v-else-if="activeTab === 'wishlist'" class="tab-pane">
           <div class="content-header">
             <h2>Sản phẩm yêu thích & Đã xem</h2>
-            <p>Quản lý các sản phẩm bạn đã gắn tim hoặc vừa xem gần đây</p>
           </div>
 
           <div class="sub-tabs">
@@ -512,7 +583,7 @@
                 v-for="item in wishlist"
                 :key="item.id"
                 class="wishlist-item-card"
-                @click="$router.push(`/product/${item.id}`)"
+                @click="goToProductDetail(item)"
               >
                 <div class="w-img-wrap">
                   <img :src="getProductImageUrl(item.image)" class="w-img" />
@@ -545,7 +616,7 @@
                 v-for="item in recentlyViewed"
                 :key="item.id"
                 class="wishlist-item-card"
-                @click="$router.push(`/product/${item.id}`)"
+                @click="goToProductDetail(item)"
               >
                 <div class="w-img-wrap">
                   <img :src="getProductImageUrl(item.image)" class="w-img" />
@@ -674,6 +745,80 @@
             <button type="button" class="btn-secondary-custom" @click="showChangePasswordModal = false">Hủy bỏ</button>
             <button type="submit" class="btn-primary-custom" :disabled="submittingPassword">
               {{ submittingPassword ? "Đang cập nhật..." : "Cập nhật" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- PRODUCT REVIEW MODAL -->
+    <div v-if="showReviewModal" class="modal-overlay-custom" @click.self="closeReviewModal">
+      <div class="modal-card-custom" style="max-width: 550px;">
+        <div class="modal-header-custom">
+          <h3>Đánh giá sản phẩm</h3>
+          <button type="button" class="btn-close-modal" @click="closeReviewModal">✕</button>
+        </div>
+        <form @submit.prevent="submitProductReview">
+          <div class="modal-body-custom">
+            <p class="review-product-name-txt" style="margin-bottom: 12px; font-size: 14px; color: #475569;">
+              Đang đánh giá cho: <strong style="color: #1e293b;">{{ reviewForm.productName }}</strong>
+            </p>
+            
+            <div class="form-group review-stars-wrap" style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #334155;">Đánh giá chất lượng sản phẩm</label>
+              <div class="review-stars-selection" style="display: flex; align-items: center; gap: 8px;">
+                <span 
+                  v-for="s in 5" 
+                  :key="s" 
+                  class="review-star-item"
+                  :style="{ color: s <= reviewForm.rating ? '#eab308' : '#cbd5e1', fontSize: '28px', cursor: 'pointer' }"
+                  @click="setRating(s)"
+                >
+                  ★
+                </span>
+                <span class="review-star-hint" style="margin-left: 8px; font-size: 13px; font-weight: 600; color: #64748b;">{{ getStarHint(reviewForm.rating) }}</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #334155;">Bình luận chi tiết (Không bắt buộc)</label>
+              <textarea
+                v-model="reviewForm.comment"
+                rows="4"
+                placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này (chất lượng, độ sắc nét, đóng gói, vận chuyển...)"
+                style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: inherit; resize: vertical;"
+                maxlength="1000"
+              ></textarea>
+              <div class="text-right-hint" style="text-align: right; font-size: 11px; color: #94a3b8; margin-top: 2px;">{{ reviewForm.comment.length }}/1000</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #334155;">Hình ảnh thực tế (Tối đa 5 ảnh)</label>
+              <div class="review-upload-row" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <label class="review-upload-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 80px; height: 80px; border: 2px dashed #cbd5e1; border-radius: 8px; cursor: pointer; background: #f8fafc;">
+                  <span class="upload-icon" style="font-size: 20px;">📷</span>
+                  <span class="upload-lbl" style="font-size: 11px; color: #64748b; margin-top: 4px;">Tải ảnh</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    class="hidden-input"
+                    style="display: none;"
+                    @change="handleReviewImagesUpload"
+                  />
+                </label>
+                
+                <div v-for="(prev, index) in reviewPreviews" :key="index" class="review-preview-box" style="position: relative; width: 80px; height: 80px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                  <img :src="prev" alt="Review Preview" class="preview-img-el" style="width: 100%; height: 100%; object-fit: cover;" />
+                  <button type="button" class="btn-remove-preview-img" style="position: absolute; top: 2px; right: 2px; background: rgba(0, 0, 0, 0.6); color: white; border: none; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer;" @click="removeReviewImage(index)">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-custom" style="display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn-secondary-custom" @click="closeReviewModal">Hủy bỏ</button>
+            <button type="submit" class="btn-primary-custom" :disabled="submittingReview">
+              {{ submittingReview ? "Đang gửi..." : "Gửi đánh giá" }}
             </button>
           </div>
         </form>
@@ -933,6 +1078,129 @@
         </div>
       </div>
     </div>
+
+    <!-- BUY AGAIN MODAL -->
+    <div
+      v-if="showBuyAgainModal"
+      class="modal-overlay-custom"
+      @click.self="closeBuyAgainModal"
+    >
+      <div class="modal-card-custom buy-again-modal">
+        <div class="modal-header-custom">
+          <h3><i class="fa-solid fa-cart-plus" style="color: #ee4d2d; margin-right: 8px;"></i>Mua lại đơn hàng</h3>
+          <button class="btn-close-modal" @click="closeBuyAgainModal">✕</button>
+        </div>
+        <div class="modal-body-custom">
+          <p class="buy-again-subtitle">
+            Mã đơn: <strong>{{ buyAgainOrder?.ma_don_hang }}</strong> &nbsp;—&nbsp;
+            <span class="ba-item-count">{{ buyAgainOrder?.chi_tiets?.length }} sản phẩm</span>
+          </p>
+
+          <!-- Product list -->
+          <div class="buy-again-product-list">
+            <div
+              v-for="detail in buyAgainOrder?.chi_tiets"
+              :key="detail.id"
+              class="ba-product-row"
+            >
+              <div class="ba-product-img">
+                <img :src="getProductImage(detail)" alt="product" />
+              </div>
+              <div class="ba-product-info">
+                <div class="ba-product-name">{{ getProductName(detail) }}</div>
+                <div class="ba-product-variant">{{ getProductVariantName(detail) }}</div>
+                <div class="ba-product-qty">Số lượng: <strong>x{{ detail.so_luong }}</strong></div>
+              </div>
+              <div class="ba-product-price">
+                <span
+                  v-if="getProductOriginalPrice(detail) && getProductOriginalPrice(detail) > detail.don_gia"
+                  class="ba-original-price"
+                >{{ formatPrice(getProductOriginalPrice(detail)) }}</span>
+                <span class="ba-sale-price">{{ formatPrice(detail.don_gia) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info note -->
+          <div class="buy-again-note">
+            <i class="fa-solid fa-circle-info"></i>
+            Tất cả sản phẩm sḝ trên sẽ được thêm vào giỏ hàng của bạn.
+          </div>
+        </div>
+        <div class="modal-footer-custom">
+          <button type="button" class="btn-secondary-custom" @click="closeBuyAgainModal">Đóng</button>
+          <button
+            type="button"
+            class="btn-primary-custom buy-again-confirm-btn"
+            :disabled="buyingAgain"
+            @click="confirmBuyAgain"
+          >
+            <i class="fa-solid fa-spinner fa-spin" v-if="buyingAgain"></i>
+            <i class="fa-solid fa-cart-plus" v-else></i>
+            {{ buyingAgain ? 'Đang thêm vào giỏ...' : 'Thêm vào giỏ hàng' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANCEL ORDER MODAL -->
+    <div
+      v-if="showCancelOrderModal"
+      class="modal-overlay-custom"
+      @click.self="closeCancelOrderModal"
+    >
+      <div class="modal-card-custom" style="max-width: 480px;">
+        <div class="modal-header-custom">
+          <h3><i class="fa-solid fa-ban" style="color: #ef4444; margin-right: 8px;"></i>Hủy đơn hàng</h3>
+          <button class="btn-close-modal" @click="closeCancelOrderModal">✕</button>
+        </div>
+        <div class="modal-body-custom">
+          <p style="margin-bottom: 6px; font-size: 13.5px; color: #475569;">
+            Mã đơn hàng: <strong style="color: #1e293b;">{{ cancelOrderTarget?.ma_don_hang }}</strong>
+          </p>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #334155;">Lý do hủy đơn <span style="color: #ef4444;">*</span></label>
+            <div class="cancel-reason-options">
+              <label
+                v-for="reason in cancelReasonOptions"
+                :key="reason"
+                class="cancel-reason-radio"
+                :class="{ 'selected': cancelForm.reason === reason }"
+              >
+                <input type="radio" :value="reason" v-model="cancelForm.reason" style="display: none;" />
+                {{ reason }}
+              </label>
+            </div>
+          </div>
+          <div class="form-group" v-if="cancelForm.reason === 'Lý do khác'">
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #334155;">Mô tả lý do</label>
+            <textarea
+              v-model="cancelForm.otherReason"
+              rows="3"
+              placeholder="Nhập lý do hủy đơn của bạn..."
+              style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: inherit; resize: vertical; box-sizing: border-box;"
+              maxlength="500"
+            ></textarea>
+          </div>
+          <p v-if="cancelFormError" style="color: #ef4444; font-size: 12.5px; margin-top: 6px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ cancelFormError }}
+          </p>
+        </div>
+        <div class="modal-footer-custom">
+          <button type="button" class="btn-secondary-custom" @click="closeCancelOrderModal">Đóng</button>
+          <button
+            type="button"
+            class="btn-primary-custom"
+            style="background: #ef4444;"
+            :disabled="cancellingOrder"
+            @click="confirmCancelOrder"
+          >
+            <i class="fa-solid fa-spinner fa-spin" v-if="cancellingOrder"></i>
+            {{ cancellingOrder ? 'Đang hủy...' : 'Xác nhận hủy' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -957,6 +1225,9 @@ const CITIES_DATA = {
 };
 
 import axios from "axios";
+import { useCartStore } from "../../store/cartStore";
+import { useWishlistStore } from "../../store/wishlistStore";
+import { getProductDetailUrl } from "../../router/utils";
 
 export default {
   name: "Profile",
@@ -969,8 +1240,31 @@ export default {
       submittingPassword: false,
       submittingAddress: false,
       showAddAddressForm: false,
+      activeOrderTab: "all",
+      orderSearchQuery: "",
       showLogoutModal: false,
       showDeleteConfirmModal: false,
+      // Cancel order modal
+      showCancelOrderModal: false,
+      cancelOrderTarget: null,
+      cancelForm: {
+        reason: '',
+        otherReason: '',
+      },
+      cancelFormError: '',
+      cancellingOrder: false,
+      cancelReasonOptions: [
+        'Tôi muốn thay đổi địa chỉ giao hàng',
+        'Tôi muốn thay đổi sản phẩm trong đơn hàng',
+        'Tôi tìm được giá tốt hơn ở nơi khác',
+        'Tôi đặt nhầm sản phẩm',
+        'Thời gian giao hàng quá lâu',
+        'Lý do khác',
+      ],
+      // Buy again modal
+      showBuyAgainModal: false,
+      buyAgainOrder: null,
+      buyingAgain: false,
       addressIdToDelete: null,
       editingAddressId: null,
       showProvinceDropdown: false,
@@ -987,6 +1281,20 @@ export default {
       showNewPassword: false,
       showConfirmPassword: false,
 
+      // Product review modal state
+      showReviewModal: false,
+      reviewForm: {
+        orderId: null,
+        detailId: null,
+        productName: "",
+        rating: 5,
+        comment: "",
+        images: [],
+      },
+      reviewPreviews: [],
+      submittingReview: false,
+      linking: false,
+
       // User data
       user: {
         id: null,
@@ -997,6 +1305,8 @@ export default {
         bio: "",
         address: "",
         avatar: null,
+        google_id: null,
+        zalo_id: null,
         updated_at: "",
       },
 
@@ -1010,8 +1320,6 @@ export default {
       provincesList: [],
       districtsList: [],
       wardsList: [],
-      wishlist: [],
-      recentlyViewed: [],
 
       // Mock Loyalty points and Vouchers
       userPoints: 0,
@@ -1068,7 +1376,7 @@ export default {
           icon: "fa-solid fa-house",
         },
         { id: "profile", label: "Hồ sơ & Mật khẩu", icon: "fa-solid fa-user" },
-        { id: "orders", label: "Lịch sử mua hàng", icon: "fa-solid fa-box" },
+        { id: "orders", label: "Đơn hàng mua", icon: "fa-solid fa-box" },
         { id: "vouchers", label: "Ưu đãi của tôi", icon: "fa-solid fa-ticket" },
         {
           id: "wishlist",
@@ -1144,6 +1452,57 @@ export default {
       if (!this.wardSearchQuery) return this.wardsList;
       const q = this.wardSearchQuery.toLowerCase();
       return this.wardsList.filter(w => w.WARDS_NAME.toLowerCase().includes(q));
+    },
+    filteredOrders() {
+      let result = this.orders || [];
+      
+      // Filter by tab
+      if (this.activeOrderTab !== 'all') {
+        result = result.filter(order => {
+          if (this.activeOrderTab === 'pending') {
+            return order.trang_thai === 'cho_xu_ly';
+          }
+          if (this.activeOrderTab === 'preparing') {
+            return order.trang_thai === 'dang_chuan_bi';
+          }
+          if (this.activeOrderTab === 'shipping') {
+            return order.trang_thai === 'dang_giao';
+          }
+          if (this.activeOrderTab === 'completed') {
+            return order.trang_thai === 'da_giao' || order.trang_thai === 'hoan_thanh';
+          }
+          if (this.activeOrderTab === 'cancelled') {
+            return order.trang_thai === 'da_huy';
+          }
+          if (this.activeOrderTab === 'refunded') {
+            return order.trang_thai === 'tra_hang_hoan_tien';
+          }
+          return true;
+        });
+      }
+      
+      // Filter by search query
+      if (this.orderSearchQuery) {
+        const q = this.orderSearchQuery.toLowerCase().trim();
+        result = result.filter(order => {
+          const matchCode = order.ma_don_hang && order.ma_don_hang.toLowerCase().includes(q);
+          const matchItems = order.chi_tiets && order.chi_tiets.some(detail => {
+            const name = detail.ten_bien_the_luc_mua || '';
+            return name.toLowerCase().includes(q);
+          });
+          return matchCode || matchItems;
+        });
+      }
+      
+      return result;
+    },
+    wishlist() {
+      const wishlistStore = useWishlistStore();
+      return wishlistStore.wishlist;
+    },
+    recentlyViewed() {
+      const wishlistStore = useWishlistStore();
+      return wishlistStore.recentlyViewed;
     }
   },
   mounted() {
@@ -1157,12 +1516,529 @@ export default {
     document.removeEventListener("click", this.closeSearchDropdowns);
   },
   methods: {
+    getProductName(detail) {
+      const name = detail.ten_bien_the_luc_mua || '';
+      if (name.includes(' (')) {
+        return name.split(' (')[0];
+      }
+      return name;
+    },
+    getProductVariantName(detail) {
+      const name = detail.ten_bien_the_luc_mua || '';
+      if (name.includes(' (')) {
+        const parts = name.split(' (');
+        return parts[1].replace(')', '');
+      }
+      return 'Mặc định';
+    },
+    getProductOriginalPrice(detail) {
+      // Lấy giá gốc từ bien_the để so sánh với don_gia (giá bán lúc mua)
+      const bienThe = detail?.bien_the || detail?.bienThe;
+      if (bienThe) {
+        return parseFloat(bienThe.gia_goc) || 0;
+      }
+      return 0;
+    },
+    getProductImage(detail) {
+      const bienThe = detail?.bien_the || detail?.bienAnhs || detail?.bienThe;
+      if (bienThe) {
+        const varImg = bienThe.hinh_anh || bienThe.hinhAnh;
+        if (varImg) return this.getProductImageUrl(varImg);
+
+        const sanPham = bienThe.san_pham || bienThe.sanPham;
+        if (sanPham) {
+          const images = sanPham.hinh_anhs || sanPham.hinhAnhs || [];
+          if (images.length > 0) {
+            const img = images[0];
+            if (img) {
+              if (typeof img === 'string') return this.getProductImageUrl(img);
+              const path = img.duong_dan_anh || img.duong_dan || img.link;
+              if (path) return this.getProductImageUrl(path);
+            }
+          }
+        }
+      }
+      return "https://via.placeholder.com/100?text=No+Image";
+    },
+    hasReviewableItem(order) {
+      if (order.trang_thai !== 'da_giao' && order.trang_thai !== 'hoan_thanh') return false;
+      return order.chi_tiets && order.chi_tiets.some(d => d.can_review);
+    },
+    openBuyAgainModal(order) {
+      this.buyAgainOrder = order;
+      this.showBuyAgainModal = true;
+    },
+    closeBuyAgainModal() {
+      this.showBuyAgainModal = false;
+      this.buyAgainOrder = null;
+      this.buyingAgain = false;
+    },
+    async confirmBuyAgain() {
+      if (!this.buyAgainOrder) return;
+      const order = this.buyAgainOrder;
+      const cartStore = useCartStore();
+      this.buyingAgain = true;
+      let successCount = 0;
+      let failedItems = [];
+
+      for (const detail of order.chi_tiets) {
+        const variant = detail.bien_the || detail.bienThe || {
+          id: detail.id_bien_the,
+          thuoc_tinh: {},
+          so_luong_ton_kho: 999
+        };
+        const product = (detail.bien_the && (detail.bien_the.san_pham || detail.bien_the.sanPham)) || {
+          ten_san_pham: detail.ten_bien_the_luc_mua,
+          hinh_anhs: []
+        };
+
+        try {
+          const res = await cartStore.addItem(product, variant, detail.so_luong);
+          if (res && res.success) {
+            successCount++;
+          } else {
+            failedItems.push(this.getProductName(detail));
+          }
+        } catch (err) {
+          console.error(err);
+          failedItems.push(this.getProductName(detail));
+        }
+      }
+
+      this.buyingAgain = false;
+
+      if (successCount > 0) {
+        this.closeBuyAgainModal();
+        if (this.$toast) {
+          this.$toast.success(`Đã thêm ${successCount} sản phẩm vào giỏ hàng!`);
+        }
+        this.$router.push('/gio-hang');
+      } else {
+        if (this.$toast) {
+          this.$toast.error('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.');
+        }
+      }
+    },
+    // Legacy alias kept for safety
+    async handleBuyAgain(order) {
+      this.openBuyAgainModal(order);
+    },
+    openCancelOrderModal(order) {
+      this.cancelOrderTarget = order;
+      this.cancelForm.reason = '';
+      this.cancelForm.otherReason = '';
+      this.cancelFormError = '';
+      this.showCancelOrderModal = true;
+    },
+    closeCancelOrderModal() {
+      this.showCancelOrderModal = false;
+      this.cancelOrderTarget = null;
+      this.cancelForm.reason = '';
+      this.cancelForm.otherReason = '';
+      this.cancelFormError = '';
+    },
+    async confirmCancelOrder() {
+      // Validate
+      if (!this.cancelForm.reason) {
+        this.cancelFormError = 'Vui lòng chọn lý do hủy đơn hàng.';
+        return;
+      }
+      if (this.cancelForm.reason === 'Lý do khác' && !this.cancelForm.otherReason.trim()) {
+        this.cancelFormError = 'Vui lòng mô tả lý do hủy đơn hàng.';
+        return;
+      }
+      this.cancelFormError = '';
+      const finalReason = this.cancelForm.reason === 'Lý do khác'
+        ? this.cancelForm.otherReason.trim()
+        : this.cancelForm.reason;
+
+      this.cancellingOrder = true;
+      try {
+        const token = this.getToken();
+        const order = this.cancelOrderTarget;
+        const res = await axios.post(
+          `/api/khach-hang/don-hang/${order.id}/huy`,
+          { ly_do_huy: finalReason },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (res.data && res.data.status) {
+          this.closeCancelOrderModal();
+          if (this.$toast) {
+            this.$toast.success(res.data.message || 'Hủy đơn hàng thành công');
+          }
+          // Refresh orders list
+          this.loadOrders(this.ordersPagination.current_page);
+        } else {
+          this.cancelFormError = res.data.message || 'Hủy đơn hàng thất bại.';
+        }
+      } catch (err) {
+        console.error(err);
+        this.cancelFormError = err.response?.data?.message || 'Lỗi khi hủy đơn hàng.';
+      } finally {
+        this.cancellingOrder = false;
+      }
+    },
+    getStarHint(rating) {
+      const hints = {
+        1: "Rất tệ",
+        2: "Không hài lòng",
+        3: "Bình thường",
+        4: "Hài lòng",
+        5: "Cực kỳ hài lòng"
+      };
+      return hints[rating] || "";
+    },
+    openReviewModal(order, detail) {
+      this.reviewForm.orderId = order.id;
+      this.reviewForm.detailId = detail.id;
+      this.reviewForm.productName = detail.ten_bien_the_luc_mua;
+      this.reviewForm.rating = 5;
+      this.reviewForm.comment = "";
+      this.reviewForm.images = [];
+      this.reviewPreviews = [];
+      this.showReviewModal = true;
+    },
+    closeReviewModal() {
+      this.showReviewModal = false;
+      this.reviewForm.orderId = null;
+      this.reviewForm.detailId = null;
+      this.reviewForm.productName = "";
+      this.reviewForm.rating = 5;
+      this.reviewForm.comment = "";
+      this.reviewForm.images = [];
+      this.reviewPreviews = [];
+    },
+    setRating(stars) {
+      this.reviewForm.rating = stars;
+    },
+    handleReviewImagesUpload(e) {
+      const files = Array.from(e.target.files);
+      if (this.reviewForm.images.length + files.length > 5) {
+        if (this.$toast) {
+          this.$toast.error("Bạn chỉ có thể tải lên tối đa 5 hình ảnh.");
+        } else {
+          alert("Bạn chỉ có thể tải lên tối đa 5 hình ảnh.");
+        }
+        return;
+      }
+
+      files.forEach((file) => {
+        if (!file.type.startsWith("image/")) {
+          if (this.$toast) {
+            this.$toast.error("Tệp tải lên phải là hình ảnh.");
+          }
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          if (this.$toast) {
+            this.$toast.error("Hình ảnh vượt quá dung lượng 5MB.");
+          }
+          return;
+        }
+        this.reviewForm.images.push(file);
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          this.reviewPreviews.push(event.target.result);
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = "";
+    },
+    removeReviewImage(index) {
+      this.reviewForm.images.splice(index, 1);
+      this.reviewPreviews.splice(index, 1);
+    },
+    async submitProductReview() {
+      if (!this.reviewForm.rating) {
+        if (this.$toast) {
+          this.$toast.error("Vui lòng chọn số sao đánh giá!");
+        }
+        return;
+      }
+
+      this.submittingReview = true;
+      const formData = new FormData();
+      formData.append("id_chi_tiet_don_hang", this.reviewForm.detailId);
+      formData.append("so_sao", this.reviewForm.rating);
+      if (this.reviewForm.comment) {
+        formData.append("binh_luan", this.reviewForm.comment);
+      }
+
+      this.reviewForm.images.forEach((file) => {
+        formData.append("anh_danh_gia[]", file);
+      });
+
+      try {
+        const res = await axios.post("/api/khach-hang/danh-gia", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: "Bearer " + this.getToken(),
+          },
+        });
+
+        if (res.data.status) {
+          if (this.$toast) {
+            this.$toast.success("Gửi đánh giá sản phẩm thành công!");
+          } else {
+            alert("Gửi đánh giá sản phẩm thành công!");
+          }
+          this.closeReviewModal();
+          this.loadOrders(this.ordersPagination.current_page);
+        } else {
+          if (this.$toast) {
+            this.$toast.error(res.data.message || "Gửi đánh giá thất bại.");
+          }
+        }
+      } catch (err) {
+        const msg = err.response?.data?.message || "Lỗi khi gửi đánh giá.";
+        if (this.$toast) {
+          this.$toast.error(msg);
+        } else {
+          alert(msg);
+        }
+      } finally {
+        this.submittingReview = false;
+      }
+    },
+    goToProductDetail(product) {
+      this.$router.push(getProductDetailUrl(product));
+    },
     getToken() {
       return localStorage.getItem("token_client");
     },
+    linkGoogle(response) {
+      console.log("Google Link Response:", response);
+      let idToken = null;
+      if (response) {
+        if (typeof response === "string") {
+          idToken = response;
+        } else if (response.credential) {
+          idToken = response.credential;
+        } else if (response.id_token) {
+          idToken = response.id_token;
+        }
+      }
+      if (!idToken) {
+        if (this.$toast) {
+          this.$toast.error("Không tìm thấy ID Token từ Google.");
+        } else {
+          alert("Không tìm thấy ID Token từ Google.");
+        }
+        return;
+      }
+
+      this.linking = true;
+      const token = this.getToken();
+      axios.post("/api/thong-tin-ca-nhan/link-google", 
+        { id_token: idToken },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .then((res) => {
+        if (res.data.status) {
+          if (this.$toast) {
+            this.$toast.success(res.data.message);
+          } else {
+            alert(res.data.message);
+          }
+          this.checkLoginAndLoad();
+        } else {
+          if (this.$toast) {
+            this.$toast.error(res.data.message);
+          } else {
+            alert(res.data.message);
+          }
+        }
+      })
+      .catch((err) => {
+        const msg = err.response?.data?.message || "Liên kết tài khoản Google thất bại.";
+        if (this.$toast) {
+          this.$toast.error(msg);
+        } else {
+          alert(msg);
+        }
+        console.error(err);
+      })
+      .finally(() => {
+        this.linking = false;
+      });
+    },
+    unlinkSocial(platform) {
+      const platformName = platform === 'google' ? 'Google' : 'Zalo';
+      if (!confirm(`Bạn có chắc chắn muốn hủy liên kết tài khoản ${platformName}?`)) {
+        return;
+      }
+      this.linking = true;
+      const token = this.getToken();
+      const url = `/api/thong-tin-ca-nhan/unlink-${platform}`;
+      axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (res.data.status) {
+          if (this.$toast) {
+            this.$toast.success(res.data.message);
+          } else {
+            alert(res.data.message);
+          }
+          this.checkLoginAndLoad();
+        } else {
+          if (this.$toast) {
+            this.$toast.error(res.data.message);
+          } else {
+            alert(res.data.message);
+          }
+        }
+      })
+      .catch((err) => {
+        const msg = err.response?.data?.message || `Hủy liên kết tài khoản ${platformName} thất bại.`;
+        if (this.$toast) {
+          this.$toast.error(msg);
+        } else {
+          alert(msg);
+        }
+        console.error(err);
+      })
+      .finally(() => {
+        this.linking = false;
+      });
+    },
+    linkZalo() {
+      this.linking = true;
+      const w = 450;
+      const h = 550;
+      const left = (window.screen.width / 2) - (w / 2);
+      const top = (window.screen.height / 2) - (h / 2);
+      
+      const popup = window.open("", "ZaloLinkPopup", `width=${w},height=${h},top=${top},left=${left}`);
+      popup.document.write(`
+        <html>
+        <head>
+          <title>Liên kết tài khoản Zalo</title>
+          <meta charset="utf-8">
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+          <style>
+            body {
+              font-family: 'Inter', sans-serif;
+              margin: 0;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              background: #f0f2f5;
+            }
+            .card {
+              background: white;
+              padding: 30px;
+              border-radius: 12px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+              text-align: center;
+              width: 80%;
+              max-width: 350px;
+            }
+            .logo {
+              width: 70px;
+              height: 70px;
+              margin-bottom: 20px;
+            }
+            h3 {
+              margin: 10px 0;
+              color: #1c1e21;
+            }
+            p {
+              font-size: 14px;
+              color: #606770;
+              margin-bottom: 25px;
+              line-height: 1.5;
+            }
+            .btn-allow {
+              background: #0068ff;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 6px;
+              font-weight: 600;
+              cursor: pointer;
+              width: 100%;
+              font-size: 15px;
+              margin-bottom: 12px;
+              transition: background 0.2s;
+            }
+            .btn-allow:hover {
+              background: #0056d6;
+            }
+            .btn-cancel {
+              background: #e4e6eb;
+              color: #4b4f56;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 6px;
+              font-weight: 600;
+              cursor: pointer;
+              width: 100%;
+              font-size: 15px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <img src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/zalo-icon.png" class="logo" />
+            <h3>Liên kết với BALAB</h3>
+            <p>Ứng dụng BALAB yêu cầu quyền truy cập thông tin công khai (Tên, Ảnh đại diện) của tài khoản Zalo của bạn.</p>
+            <button class="btn-allow" onclick="window.opener.postMessage({ type: 'zalo-auth-success', code: 'zalo_code_' + Math.random().toString(36).substring(2) }, '*')">Cho phép</button>
+            <button class="btn-cancel" onclick="window.close()">Hủy bỏ</button>
+          </div>
+        </body>
+        </html>
+      `);
+      
+      const messageListener = (event) => {
+        if (event.data && event.data.type === 'zalo-auth-success') {
+          const authCode = event.data.code;
+          const token = this.getToken();
+          
+          axios.post("/api/thong-tin-ca-nhan/link-zalo", 
+            { code: authCode },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .then((res) => {
+            if (res.data.status) {
+              if (this.$toast) {
+                this.$toast.success(res.data.message);
+              } else {
+                alert(res.data.message);
+              }
+              this.checkLoginAndLoad();
+            } else {
+              if (this.$toast) {
+                this.$toast.error(res.data.message);
+              } else {
+                alert(res.data.message);
+              }
+            }
+          })
+          .catch((err) => {
+            const msg = err.response?.data?.message || "Liên kết tài khoản Zalo thất bại.";
+            if (this.$toast) {
+              this.$toast.error(msg);
+            } else {
+              alert(msg);
+            }
+            console.error(err);
+          })
+          .finally(() => {
+            this.linking = false;
+            popup.close();
+            window.removeEventListener('message', messageListener);
+          });
+        }
+      };
+      
+      window.addEventListener('message', messageListener);
+    },
     async fetchProvinces() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/viettelpost/provinces");
+        const res = await axios.get("/api/viettelpost/provinces");
         if (res.data && res.data.data) {
           this.provincesList = res.data.data;
         } else if (res.data) {
@@ -1176,7 +2052,7 @@ export default {
       if (!provinceId) return;
       this.loadingDistricts = true;
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/viettelpost/districts/${provinceId}`);
+        const res = await axios.get(`/api/viettelpost/districts/${provinceId}`);
         if (res.data && res.data.data) {
           this.districtsList = res.data.data;
         } else if (res.data) {
@@ -1192,7 +2068,7 @@ export default {
       if (!districtId) return;
       this.loadingWards = true;
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/viettelpost/wards/${districtId}`);
+        const res = await axios.get(`/api/viettelpost/wards/${districtId}`);
         if (res.data && res.data.data) {
           this.wardsList = res.data.data;
         } else if (res.data) {
@@ -1335,7 +2211,7 @@ export default {
       if (!token) return;
       try {
         const addressRes = await axios.get(
-          "http://127.0.0.1:8000/api/khach-hang/dia-chi",
+          "/api/khach-hang/dia-chi",
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -1365,7 +2241,7 @@ export default {
       try {
         // 1. Tải thông tin tài khoản
         const profileRes = await axios.get(
-          "http://127.0.0.1:8000/api/thong-tin-ca-nhan/profile",
+          "/api/thong-tin-ca-nhan/profile",
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -1381,6 +2257,8 @@ export default {
             dob: d.dob || "",
             bio: d.bio || "",
             address: d.address || "",
+            google_id: d.google_id || null,
+            zalo_id: d.zalo_id || null,
             avatar: d.avatar,
             updated_at: d.updated_at || "",
           };
@@ -1399,7 +2277,7 @@ export default {
 
         // 2. Tải sổ địa chỉ nhận hàng
         const addressRes = await axios.get(
-          "http://127.0.0.1:8000/api/khach-hang/dia-chi",
+          "/api/khach-hang/dia-chi",
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -1435,7 +2313,7 @@ export default {
         payload.append("gioi_thieu", this.profileForm.gioi_thieu || "");
 
         const res = await axios.post(
-          "http://127.0.0.1:8000/api/thong-tin-ca-nhan/update",
+          "/api/thong-tin-ca-nhan/update",
           payload,
           {
             headers: {
@@ -1484,7 +2362,7 @@ export default {
       this.submittingPassword = true;
       try {
         const res = await axios.post(
-          "http://127.0.0.1:8000/api/thong-tin-ca-nhan/update-password",
+          "/api/thong-tin-ca-nhan/update-password",
           this.passwordForm,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -1526,7 +2404,7 @@ export default {
 
       try {
         const res = await axios.post(
-          "http://127.0.0.1:8000/api/thong-tin-ca-nhan/update",
+          "/api/thong-tin-ca-nhan/update",
           payload,
           {
             headers: {
@@ -1723,7 +2601,7 @@ export default {
       this.submittingAddress = true;
       try {
         await axios.post(
-          "http://127.0.0.1:8000/api/khach-hang/dia-chi",
+          "/api/khach-hang/dia-chi",
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -1744,7 +2622,7 @@ export default {
       this.submittingAddress = true;
       try {
         await axios.put(
-          `http://127.0.0.1:8000/api/khach-hang/dia-chi/${this.editingAddressId}`,
+          `/api/khach-hang/dia-chi/${this.editingAddressId}`,
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -1770,7 +2648,7 @@ export default {
       const token = this.getToken();
       try {
         await axios.delete(
-          `http://127.0.0.1:8000/api/khach-hang/dia-chi/${this.addressIdToDelete}`,
+          `/api/khach-hang/dia-chi/${this.addressIdToDelete}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -1790,36 +2668,44 @@ export default {
       if (!token) return;
       try {
         const ordersRes = await axios.get(
-          `http://127.0.0.1:8000/api/khach-hang/don-hang?page=${page}`,
+          `/api/khach-hang/don-hang?page=${page}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-        this.orders = ordersRes.data.data || [];
-        this.ordersPagination = {
-          current_page: ordersRes.data.current_page || 1,
-          last_page: ordersRes.data.last_page || 1,
-        };
+        if (Array.isArray(ordersRes.data)) {
+          this.orders = ordersRes.data;
+          this.ordersPagination = {
+            current_page: 1,
+            last_page: 1,
+          };
+        } else {
+          this.orders = ordersRes.data.data || [];
+          this.ordersPagination = {
+            current_page: ordersRes.data.current_page || 1,
+            last_page: ordersRes.data.last_page || 1,
+          };
+        }
       } catch (error) {
         console.error("Lỗi khi tải đơn hàng:", error);
       }
     },
     loadWishlist() {
-      this.wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+      const wishlistStore = useWishlistStore();
+      wishlistStore.loadWishlist();
     },
-    removeFav(id) {
-      this.wishlist = this.wishlist.filter((item) => item.id !== id);
-      localStorage.setItem("wishlist", JSON.stringify(this.wishlist));
+    async removeFav(id) {
+      const wishlistStore = useWishlistStore();
+      await wishlistStore.toggleWishlist({ id });
     },
     loadRecentlyViewed() {
-      this.recentlyViewed = JSON.parse(
-        localStorage.getItem("recentlyViewed") || "[]",
-      );
+      const wishlistStore = useWishlistStore();
+      wishlistStore.loadRecentlyViewed();
     },
     getProductImageUrl(path) {
       if (!path) return "https://via.placeholder.com/300?text=No+Image";
       if (path.startsWith("http")) return path;
-      return "http://127.0.0.1:8000" + (path.startsWith("/") ? "" : "/") + path;
+      return "" + (path.startsWith("/") ? "" : "/") + path;
     },
     copyCode(code) {
       navigator.clipboard.writeText(code);
@@ -1890,6 +2776,604 @@ export default {
 </script>
 
 <style scoped>
+/* ── Shopee Order History Styling ── */
+.order-history-header {
+  margin-bottom: 10px;
+}
+
+.order-tabs-nav {
+  display: flex;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0,0,0,0.09);
+  margin-bottom: 16px;
+  overflow-x: auto;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  scrollbar-width: none; /* Firefox */
+}
+
+.order-tabs-nav::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.tab-nav-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px 11px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #020202;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+  position: relative;
+  transition: color 0.2s ease;
+  min-width: 100px;
+}
+
+.tab-nav-btn:hover {
+  color: #ee4d2d;
+}
+
+.tab-nav-btn.active {
+  color: #ee4d2d;
+  font-weight: 600;
+}
+
+.tab-nav-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #ee4d2d;
+  border-radius: 2px;
+}
+
+.order-search-wrapper {
+  margin-bottom: 10px;
+}
+
+.order-search-box {
+  position: relative;
+  background: #eaeaea;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.order-search-box .search-icon {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+.order-search-input {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  font-size: 14px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+.order-search-input:focus {
+  border-color: #ee4d2d;
+  box-shadow: 0 0 0 2px rgba(238, 77, 45, 0.15);
+}
+
+/* Custom Scrollbar for orders list */
+.order-scroll-container {
+  max-height: 760px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.order-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.order-scroll-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.order-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.order-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Shopee Order Card */
+.order-card-shopee {
+  background: #ffffff;
+  border-radius: 10px;
+  margin-bottom: 2px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  border: 1px solid #e8edf3;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: box-shadow 0.2s ease;
+}
+
+.order-card-shopee:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.order-card-header-slim {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 16px;
+  border-bottom: 1px solid #edf0f5;
+  background: linear-gradient(135deg, #fff8f6 0%, #fafbfc 100%);
+  border-left: 3px solid #ee4d2d;
+}
+
+.order-code-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-icon-sm {
+  color: #ee4d2d;
+  font-size: 13px;
+}
+
+.order-code-txt {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+  letter-spacing: 0.4px;
+  font-family: 'Arial Bold', monospace;
+}
+
+/* Cancel reason options */
+.cancel-reason-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cancel-reason-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #334155;
+  transition: all 0.18s ease;
+  background: #fff;
+  user-select: none;
+}
+
+.cancel-reason-radio:hover {
+  border-color: #ee4d2d;
+  background: #fff5f3;
+  color: #ee4d2d;
+}
+
+.cancel-reason-radio.selected {
+  border-color: #ee4d2d;
+  background: #fff5f3;
+  color: #ee4d2d;
+  font-weight: 600;
+}
+
+.cancel-reason-radio.selected::before {
+  content: '✓';
+  color: #ee4d2d;
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.hint-cancelled {
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+}
+
+.cancel-reason-inline {
+  font-style: italic;
+  color: #64748b;
+}
+
+
+.order-status-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.shipping-info {
+  color: #26a27b;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.status-separator {
+  color: #cbd5e1;
+}
+
+.status-shopee-txt {
+  font-weight: 600;
+  font-size: 13px;
+  color: #ee4d2d;
+}
+
+.status-shopee-txt.status-cancelled {
+  color: #4e555c;
+}
+
+.status-shopee-txt.status-completed {
+  color: #26a27b;
+}
+
+.order-card-items {
+  padding: 0 16px;
+  background: #ffffff;
+}
+
+.order-item-shopee-row {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px solid #f4f6f9;
+  gap: 12px;
+  align-items: center;
+}
+
+.order-item-shopee-row:last-child {
+  border-bottom: none;
+}
+
+.item-img-wrapper {
+  width: 110px;
+  height: 110px;
+  border: 1.5px solid #e8edf3;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f8fafc;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.item-image-shopee {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-details-shopee {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.item-title-shopee {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.item-variant-shopee {
+  font-size: 11.5px;
+  color: #94a3b8;
+  background: #f8fafc;
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid #e8edf3;
+  width: fit-content;
+}
+
+.item-qty-shopee {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.item-review-action {
+  margin-top: 4px;
+}
+
+.item-price-shopee {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 100px;
+  gap: 2px;
+}
+
+.item-price-shopee .original-price {
+  color: #94a3b8;
+  font-size: 11.5px;
+  text-decoration: line-through;
+}
+
+.item-price-shopee .current-price {
+  color: #ee4d2d;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+/* ── Buy Again Modal ── */
+.buy-again-modal {
+  max-width: 520px;
+  width: 100%;
+}
+
+.buy-again-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 14px;
+}
+
+.buy-again-subtitle strong {
+  color: #1e293b;
+  font-family: 'Courier New', monospace;
+  font-size: 13.5px;
+}
+
+.ba-item-count {
+  background: #fff0ed;
+  color: #ee4d2d;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.buy-again-product-list {
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.ba-product-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f4f6f9;
+  transition: background 0.15s ease;
+}
+
+.ba-product-row:last-child {
+  border-bottom: none;
+}
+
+.ba-product-row:hover {
+  background: #fafbfc;
+}
+
+.ba-product-img {
+  width: 58px;
+  height: 58px;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid #e8edf3;
+  flex-shrink: 0;
+  background: #f8fafc;
+}
+
+.ba-product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ba-product-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ba-product-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ba-product-variant {
+  font-size: 11.5px;
+  color: #94a3b8;
+  background: #f8fafc;
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #e8edf3;
+  width: fit-content;
+}
+
+.ba-product-qty {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.ba-product-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.ba-original-price {
+  font-size: 11px;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.ba-sale-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ee4d2d;
+}
+
+.buy-again-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  color: #2563eb;
+}
+
+.buy-again-note i {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.buy-again-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #ee4d2d 0%, #d63e21 100%) !important;
+  box-shadow: 0 3px 10px rgba(238,77,45,0.3);
+  transition: all 0.2s ease !important;
+}
+
+.buy-again-confirm-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(238,77,45,0.4) !important;
+}
+
+.buy-again-confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-primary-buy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-card-totals {
+  background: #fdf8f7;
+  padding: 6px 16px;
+  border-top: 1px solid #f4e8e4;
+  border-bottom: 1px solid #f4e8e4;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.totals-line-shopee {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.totals-label {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.totals-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ee4d2d;
+}
+
+.order-card-actions {
+  background: #ffffff;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid #f4f6f9;
+}
+
+.actions-hint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.actions-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-shopee {
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  outline: none;
+}
+
+.btn-outline-cancel {
+  background: #ffffff;
+  border: 1px solid #fca5a5;
+  color: #ef4444;
+}
+
+.btn-outline-cancel:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #f87171;
+}
+
+.btn-primary-buy {
+  background: #ee4d2d;
+  color: #ffffff;
+  border: 1px solid #ee4d2d;
+}
+
+.btn-primary-buy:hover {
+  background: #d63e21;
+  border-color: #d63e21;
+}
+
 /* ── Container Layout ── */
 .profile-page {
   background-color: #f4f6f9;
@@ -2072,7 +3556,7 @@ export default {
 }
 
 .content-header {
-  margin-bottom: 10px;
+  margin-bottom: 0px;
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 5px;
 }
@@ -2093,7 +3577,7 @@ export default {
   border-radius: 16px;
   color: #fff;
   padding: 24px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   box-shadow: 0 8px 24px rgba(215, 0, 24, 0.2);
 }
 
@@ -2447,6 +3931,29 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 760px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.orders-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.orders-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.orders-list::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+.orders-list::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 .order-card {
@@ -2454,11 +3961,11 @@ export default {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 .order-header-row {
-  background: #f1f5f9;
+  background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
   padding: 10px 16px;
   display: flex;
@@ -2503,8 +4010,10 @@ export default {
 }
 
 .item-qty {
-  color: #64748b;
-  font-size: 12px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 6px;
 }
 
 .item-price {
@@ -2513,18 +4022,21 @@ export default {
 }
 
 .order-summary-footer {
-  padding: 10px 16px;
-  background: #f8fafc;
+  padding: 0;
+  background: #ffffff;
   display: flex;
   justify-content: flex-end;
+  border-top: 1px solid #e2e8f0;
 }
 
 .summary-details {
-  width: 260px;
+  width: 320px;
+  border-left: 1px solid #e2e8f0;
+  padding: 12px 24px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12.5px;
+  gap: 6px;
+  font-size: 13px;
 }
 
 .summary-line {
@@ -3886,5 +5398,39 @@ input:checked + .slider-custom:before {
     background: #eff6ff;
     color: #3b82f6;
   }
+}
+
+.btn-review-now-sm {
+  background: #d70018;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: inline-block;
+}
+.btn-review-now-sm:hover {
+  background: #b50012;
+}
+.reviewed-badge-sm {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+.review-expired-sm {
+  background: #f8fafc;
+  color: #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
 }
 </style>

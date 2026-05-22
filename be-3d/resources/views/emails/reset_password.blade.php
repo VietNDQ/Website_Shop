@@ -119,32 +119,32 @@
                 <h1 class="logo-text">BALAB</h1>
                 <p class="logo-sub">Premium Models & Collectibles</p>
             </div>
-            
+
             <!-- Body -->
             <div class="email-body">
                 <h2 class="welcome-title">Xin chào {{ $ho_ten }},</h2>
                 <p class="description-text">
-                    Chúng tôi nhận được yêu cầu khôi phục mật khẩu cho tài khoản của bạn tại cửa hàng mô hình BALAB. 
+                    Chúng tôi nhận được yêu cầu khôi phục mật khẩu cho tài khoản của bạn tại cửa hàng BALAB.
                     Vui lòng bấm vào nút bên dưới để tiến hành thiết lập mật khẩu mới:
                 </p>
-                
+
                 <div class="btn-wrapper">
                     <a href="{{ $reset_url }}" class="btn-reset" target="_blank">Khôi Phục Mật Khẩu</a>
                 </div>
-                
+
                 <p class="description-text" style="font-size: 13px; color: #94a3b8; margin-top: 15px;">
                     Nếu nút trên không hoạt động, bạn có thể copy link sau và dán vào trình duyệt: <br>
                     <a href="{{ $reset_url }}" style="color: #8b5cf6; word-break: break-all;">{{ $reset_url }}</a>
                 </p>
-                
+
                 <div class="warning-box">
                     <p class="warning-text">
-                        <strong>Lưu ý:</strong> Liên kết khôi phục mật khẩu này sẽ hết hiệu lực sau <strong>60 phút</strong>. 
+                        <strong>Lưu ý:</strong> Liên kết khôi phục mật khẩu này sẽ hết hiệu lực sau <strong>60 phút</strong>.
                         Nếu bạn không yêu cầu thay đổi này, hãy bỏ qua email này một cách an toàn.
                     </p>
                 </div>
             </div>
-            
+
             <!-- Footer -->
             <div class="email-footer">
                 <p class="footer-text">Email này được gửi tự động, vui lòng không trả lời trực tiếp.</p>

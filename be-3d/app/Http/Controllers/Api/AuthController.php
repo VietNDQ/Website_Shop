@@ -58,6 +58,9 @@ class AuthController extends Controller
             'dang_hoat_dong' => true,
         ]);
 
+        // Ghi log đăng ký tài khoản mới
+        \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Đăng ký tài khoản thành công", '#10b981');
+
         return response()->json([
             'message' => 'Đăng ký thành công',
             'user' => $user,
@@ -85,6 +88,9 @@ class AuthController extends Controller
         }
 
         $user->update(['dang_nhap_lan_cuoi_luc' => now()]);
+
+        // Ghi log đăng nhập thành công
+        \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Đăng nhập thành công (Thiết bị/Phiên mới)", '#3b82f6');
 
         return response()->json([
             'user' => $user,
@@ -187,6 +193,9 @@ class AuthController extends Controller
         $user = NguoiDung::where('email', $email)->first();
         $user->mat_khau = Hash::make($request->mat_khau);
         $user->save();
+
+        // Ghi log khôi phục mật khẩu thành công
+        \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Khôi phục mật khẩu thành công qua email", '#e11d48');
 
         // Delete the token
         DB::table('password_reset_tokens')->where('email', $email)->delete();

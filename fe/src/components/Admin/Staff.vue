@@ -23,6 +23,7 @@
             <select class="sel" v-model="filterRole">
               <option value="">Tất cả vai trò</option>
               <option>Super Admin</option>
+              <option>Quản lý</option>
               <option>Nhân viên kho</option>
               <option>Nhân viên bán hàng</option>
             </select>
@@ -32,12 +33,12 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Nhân viên</th>
-              <th>Email</th>
-              <th>Vai trò</th>
-              <th>Trạng thái</th>
-              <th>Đăng nhập cuối</th>
-              <th>Thao tác</th>
+              <th style="color:black">Nhân viên</th>
+              <th style="color:black">Email</th>
+              <th style="color:black">Vai trò</th>
+              <th style="color:black">Trạng thái</th>
+              <th style="color:black">Đăng nhập cuối</th>
+              <th style="color:black">Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -52,13 +53,13 @@
                 </div>
               </td>
               <td>{{ s.email }}</td>
-              <td><span class="role-badge" :class="'r-' + s.roleKey">{{ s.role }}</span></td>
-              <td>
+              <td class="whitespace-nowrap"><span class="role-badge" :class="'r-' + s.roleKey">{{ s.role }}</span></td>
+              <td class="whitespace-nowrap">
                 <span class="status-pill" :class="s.active ? 's-delivered' : 's-cancelled'">
                   {{ s.active ? 'Đang hoạt động' : 'Bị khóa' }}
                 </span>
               </td>
-              <td>{{ s.lastLogin }}</td>
+              <td class="whitespace-nowrap">{{ s.lastLogin }}</td>
               <td>
                 <div class="action-btns">
                   <button class="act-btn edit" @click="openModal('edit', s)" title="Sửa chi tiết"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -126,6 +127,7 @@
             <div class="form-group span-2">
               <label>Vai trò <span class="req">*</span></label>
               <select v-model="form.role" :disabled="modalMode === 'edit' && isCurrentUser(form.email)">
+                <option value="Quản lý">Quản lý</option>
                 <option value="Nhân viên kho">Nhân viên kho</option>
                 <option value="Nhân viên bán hàng">Nhân viên bán hàng</option>
                 <option value="Super Admin">Super Admin</option>
@@ -236,7 +238,7 @@ export default {
     },
     async fetchStaffData() {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/api/quan-tri/nhan-vien/data', this.getConfig());
+        const res = await axios.get('/api/quan-tri/nhan-vien/data', this.getConfig());
         if (res.data.status) {
           this.staff = res.data.data.staff || [];
           this.activityLogs = res.data.data.logs || [];
@@ -247,6 +249,7 @@ export default {
     },
     getRoleKey(role) {
       if (role === 'Super Admin') return 'super';
+      if (role === 'Quản lý') return 'manager';
       if (role === 'Nhân viên kho') return 'warehouse';
       if (role === 'Nhân viên bán hàng') return 'sales';
       return 'sales';
@@ -306,7 +309,7 @@ export default {
             vai_tro: this.form.role,
             mat_khau: this.form.password,
           };
-          const res = await axios.post('http://127.0.0.1:8000/api/quan-tri/nhan-vien/create', payload, this.getConfig());
+          const res = await axios.post('/api/quan-tri/nhan-vien/create', payload, this.getConfig());
           if (res.data.status) {
             this.showToast(`Đã tạo tài khoản cho "${this.form.name}" thành công!`, 'success');
             this.fetchStaffData();
@@ -326,7 +329,7 @@ export default {
             so_dien_thoai: this.form.phone ? this.form.phone.trim() : null,
             vai_tro: this.form.role,
           };
-          const res = await axios.post('http://127.0.0.1:8000/api/quan-tri/nhan-vien/update', payload, this.getConfig());
+          const res = await axios.post('/api/quan-tri/nhan-vien/update', payload, this.getConfig());
           if (res.data.status) {
             this.showToast(`Cập nhật thông tin nhân viên "${this.form.name}" thành công!`, 'info');
             this.fetchStaffData();
@@ -377,7 +380,7 @@ export default {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            const res = await axios.post(`http://127.0.0.1:8000/api/quan-tri/nhan-vien/${staffMember.id}/toggle-lock`, {}, this.getConfig());
+            const res = await axios.post(`/api/quan-tri/nhan-vien/${staffMember.id}/toggle-lock`, {}, this.getConfig());
             if (res.data.status) {
               const toastMsg = isLocking 
                 ? `Đã khóa tài khoản của "${staffMember.name}"!`
@@ -414,5 +417,5 @@ export default {
 </script>
 
 <style scoped>
-@import "/style_admin/staff.css";
+@import "../../../public/style_admin/staff.css";
 </style>

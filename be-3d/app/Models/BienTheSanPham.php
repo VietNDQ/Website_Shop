@@ -18,7 +18,9 @@ class BienTheSanPham extends Model
         'id_san_pham',
         'ma_kho',
         'thuoc_tinh',
+        'hinh_anh',
         'gia_ban',
+        'gia_goc',
         'so_luong_ton_kho',
     ];
 

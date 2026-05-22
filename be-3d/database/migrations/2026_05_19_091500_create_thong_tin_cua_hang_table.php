@@ -27,12 +27,12 @@ return new class extends Migration
 
         // Seed default store info
         DB::table('thong_tin_cua_hang')->insert([
-            'ten_thuong_hieu' => 'Mô Hình BALAB',
+            'ten_thuong_hieu' => 'BALAB',
             'hotline' => '1800 2097',
             'email_ho_tro' => 'support@BALAB.vn',
             'website' => 'https://BALAB.vn',
             'dia_chi_kho' => '123 Nguyễn Văn Linh, Q.7, TP.HCM',
-            'mo_ta' => 'Chuyên phân phối mô hình chính hãng, chất lượng cao.',
+            'mo_ta' => 'Chuyên phân phối sản phẩm chính hãng, chất lượng cao.',
             'facebook' => 'https://facebook.com/mohinhBALAB',
             'instagram' => 'https://instagram.com/mohinhBALAB',
             'created_at' => now(),

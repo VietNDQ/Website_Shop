@@ -14,8 +14,32 @@ class DanhMucSeeder extends Seeder
     {
         $categories = [
             [
-                'ten_danh_muc' => 'Mô hình',
-                'duong_dan_mau' => 'mo-hinh',
+                'ten_danh_muc' => 'Mô hình Anime & Figure',
+                'duong_dan_mau' => 'mo-hinh-anime-figure',
+            ],
+            [
+                'ten_danh_muc' => 'Mô hình Lắp ráp (Gundam/Plamo)',
+                'duong_dan_mau' => 'mo-hinh-lap-rap',
+            ],
+            [
+                'ten_danh_muc' => 'Mô hình Xe cộ & Quân sự',
+                'duong_dan_mau' => 'mo-hinh-xe-co-quan-su',
+            ],
+            [
+                'ten_danh_muc' => 'Mô hình In 3D (FDM/Resin)',
+                'duong_dan_mau' => 'mo-hinh-in-3d',
+            ],
+            [
+                'ten_danh_muc' => 'Mô hình Kiến trúc & Diorama',
+                'duong_dan_mau' => 'mo-hinh-kien-truc-diorama',
+            ],
+            [
+                'ten_danh_muc' => 'Dụng cụ lắp ráp & Cắt gọt',
+                'duong_dan_mau' => 'dung-cu-lap-rap-cat-got',
+            ],
+            [
+                'ten_danh_muc' => 'Sơn & Hóa chất mô hình',
+                'duong_dan_mau' => 'son-va-hoa-chat-mo-hinh',
             ],
             [
                 'ten_danh_muc' => 'Dụng cụ cá nhân',

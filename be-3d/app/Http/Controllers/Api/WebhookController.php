@@ -39,6 +39,14 @@ class WebhookController extends Controller
                     'trang_thai' => 'dang_chuan_bi',
                     'ghi_chu' => 'Thanh toán thành công. Đơn hàng đang được chuẩn bị.',
                 ]);
+
+                // Ghi log thanh toán thành công qua Webhook
+                \App\Models\NhatKyHoatDong::ghiLog(
+                    $order->id_nguoi_dung,
+                    $order->nguoiDung?->ho_ten ?: 'Khách vãng lai',
+                    "Thanh toán thành công qua Webhook cho đơn hàng {$order->ma_don_hang}. Mã giao dịch: {$request->transaction_id}",
+                    '#10b981'
+                );
             } else {
                 $payment->update(['trang_thai' => 'that_bai']);
             }

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!--  HERO  -->
  <section class="hero">
     <div class="hero-bg"></div>
@@ -67,86 +67,17 @@
       </div>
     </div>
   </section>
-  <!--  SEARCH & FILTER  -->
-  <div class="search-section">
-    <div class="search-inner">
-      <div class="search-field-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
-        <input
-          class="search-field"
-          type="text"
-          v-model="searchQuery"
-          @keyup.enter="handleSearch"
-          @focus="showSuggestions = true"
-          @blur="hideSuggestionsWithDelay"
-          placeholder="Tm kim theo tn hoc m t..."
-        />
-        <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-box">
-          <button
-            v-for="item in suggestions"
-            :key="`${item.type}-${item.id}`"
-            type="button"
-            class="suggestion-item"
-            @mousedown.prevent="selectSuggestion(item)"
-          >
-            {{ item.label }}
-          </button>
-        </div>
-      </div>
-      <select class="select-filter" v-model="selectedScale" @change="handleFilterChange">
-        <option value="">T&#7845;t c&#7843; t&#7881; l&#7879;/size</option>
-        <option value="1:18">T&#7881; l&#7879; 1:18</option>
-        <option value="1:24">T&#7881; l&#7879; 1:24</option>
-        <option value="1:43">T&#7881; l&#7879; 1:43</option>
-        <option value="1:72">T&#7881; l&#7879; 1:72</option>
-        <option value="8cm">K&#237;ch th&#432;&#7899;c 8cm</option>
-        <option value="10cm">K&#237;ch th&#432;&#7899;c 10cm</option>
-        <option value="15cm">K&#237;ch th&#432;&#7899;c 15cm</option>
-      </select>
-      <select class="select-filter" v-model="selectedSort" @change="handleFilterChange">
-        <option value="featured">N&#7893;i b&#7853;t nh&#7845;t</option>
-        <option value="price_asc">Gi&#225;: Th&#7845;p - Cao</option>
-        <option value="price_desc">Gi&#225;: Cao - Th&#7845;p</option>
-        <option value="newest">M&#7899;i nh&#7845;t</option>
-      </select>
-      <button class="btn-explore" @click="handleSearch">
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
-        T&#236;m ki&#7871;m
-      </button>
-    </div>
-  </div>
-
-  <!--  FEATURED MODELS  -->
-  <div class="products-bg">
-    <div class="section">
-      <div class="section-header">
-        <div class="section-title-wrap">
-          <div class="section-eyebrow">L&#7921;a ch&#7885;n h&#224;ng &#273;&#7847;u</div>
-          <h2 class="section-title">S&#7843;n ph&#7849;m n&#7893;i b&#7853;t</h2>
-        </div>
-        <a href="#" class="btn-view-all" @click.prevent="selectCategory(null)">Xem t&#7845;t c&#7843; &#8594;</a>
-      </div>
-
+  <!--  CATEGORIES SECTION  -->
+  <div class="categories-section">
+    <div class="categories-inner">
+      <span class="categories-label">Danh mục sản phẩm:</span>
       <div class="cat-tabs">
         <button 
           class="cat-tab" 
           :class="{ active: selectedCategoryId === null }"
           @click="selectCategory(null)"
         >
-          T&#7845;t c&#7843;
+          Tất cả
         </button>
         <button 
           v-for="cat in categories" 
@@ -157,6 +88,19 @@
         >
           {{ cat.ten_danh_muc }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!--  FEATURED MODELS  -->
+  <div class="products-bg">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <div class="section-eyebrow">Lựa chọn hàng đầu</div>
+          <h2 class="section-title">Sản phẩm nổi bật</h2>
+        </div>
+        <a href="#" class="btn-view-all" @click.prevent="selectCategory(null)">Xem tất cả →</a>
       </div>
 
       <div v-if="loading" class="empty-products">
@@ -171,17 +115,16 @@
             @click="goToDetail(product.id)"
           >
             <!-- Badge -->
-            <div class="product-badge badge-new" v-if="product.tinh_trang === 1">Äang bÃ¡n</div>
-            <div class="product-badge badge-sale" v-else-if="product.tinh_trang === 0">Háº¿t hÃ ng</div>
-            <div class="product-badge badge-ltd" v-else-if="product.tinh_trang === 2">áº¨n</div>
+            <div class="product-badge badge-new" v-if="product.tinh_trang === 1">{{ '\u0110ang b\u00e1n' }}</div>
+            <div class="product-badge badge-sale" v-else-if="product.tinh_trang === 0">{{ 'H\u1ebft h\u00e0ng' }}</div>
+            <div class="product-badge badge-ltd" v-else-if="product.tinh_trang === 2">{{ '\u1ea8n' }}</div>
             
             <div class="product-img-wrap">
               <img :src="getProductImage(product)" :alt="product.ten_san_pham" class="product-img" />
             </div>
             <div class="product-info">
-              <div class="product-brand">{{ product.danh_muc ? product.danh_muc.ten_danh_muc : 'MÃ´ hÃ¬nh' }}</div>
+              <div class="product-brand">{{ product.danh_muc ? product.danh_muc.ten_danh_muc : '\u004d\u00f4 h\u00ecnh' }}</div>
               <div class="product-name truncate" :title="product.ten_san_pham">{{ product.ten_san_pham }}</div>
-              <div class="product-scale">{{ getProductScaleOrSize(product) }}</div>
               <div class="product-rating">
                 <span class="stars"></span>
                 <span>(5.0)</span>
@@ -228,7 +171,7 @@
       </div>
       
       <div v-else class="empty-products">
-        KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m nÃ o phÃ¹ há»£p.
+        {{ 'Kh\u00f4ng t\u00ecm th\u1ea5y s\u1ea3n ph\u1ea9m n\u00e0o ph\u00f9 h\u1ee3p.' }}
       </div>
     </div>
   </div>
@@ -297,17 +240,14 @@
         <div class="banner-model">
           <span class="banner-model-emoji"><i class="fa-solid fa-dragon"></i></span>
           <div class="banner-model-name">Rồng Khớp Động</div>
-          <div class="banner-model-price">180.000 ₫</div>
         </div>
         <div class="banner-model">
           <span class="banner-model-emoji"><i class="fa-solid fa-robot"></i></span>
           <div class="banner-model-name">Mecha Gundam</div>
-          <div class="banner-model-price">350.000 ₫</div>
         </div>
         <div class="banner-model">
           <span class="banner-model-emoji"><i class="fa-solid fa-cube"></i></span>
           <div class="banner-model-name">Sa Bàn Diorama</div>
-          <div class="banner-model-price">290.000 ₫</div>
         </div>
       </div>
     </div>
@@ -315,6 +255,7 @@
 </template>
 <script>
 import axios from "axios";
+import { getProductDetailUrl } from "../../router/utils";
 
 export default {
   name: "Home",
@@ -375,7 +316,7 @@ export default {
       }
 
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/tim-kiem/goi-y", {
+        const res = await axios.get("/api/tim-kiem/goi-y", {
           params: {
             q: keyword,
             id_danh_muc: this.selectedCategoryId || "",
@@ -402,7 +343,7 @@ export default {
     },
     async trackSuggestionClick(item) {
       try {
-        await axios.post("http://127.0.0.1:8000/api/tim-kiem/track", {
+        await axios.post("/api/tim-kiem/track", {
           keyword: this.searchQuery,
           suggestion: item.label || "",
           type: item.type || "product",
@@ -419,10 +360,10 @@ export default {
     },
     async fetchCategories() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/danh-muc");
+        const response = await axios.get("/api/danh-muc");
         this.categories = response.data;
       } catch (error) {
-        console.error("Li khi táº£i danh má»¥c:", error);
+        console.error("L\u1ed7i khi t\u1ea3i danh m\u1ee5c:", error);
       }
     },
     async fetchProducts(page = 1) {
@@ -431,6 +372,7 @@ export default {
       try {
         const params = {
           page: this.currentPage,
+          per_page: 10,
         };
         
         if (this.selectedCategoryId) {
@@ -449,24 +391,24 @@ export default {
           params.sort = this.selectedSort;
         }
         
-        const response = await axios.get("http://127.0.0.1:8000/api/san-pham", { params });
+        const response = await axios.get("/api/san-pham", { params });
         const data = response.data;
         
         this.products = data.data;
         this.totalPages = data.last_page;
         this.totalItems = data.total;
       } catch (error) {
-        console.error("Li khi táº£i sáº£n pháº©m:", error);
+        console.error("L\u1ed7i khi t\u1ea3i s\u1ea3n ph\u1ea9m:", error);
       } finally {
         this.loading = false;
       }
     },
     selectCategory(id) {
       this.selectedCategoryId = id;
+      this.searchQuery = "";
       this.$router.push({
-        path: "/",
+        path: "/san-pham",
         query: {
-          ...(this.searchQuery.trim() ? { search: this.searchQuery.trim() } : {}),
           ...(this.selectedCategoryId ? { id_danh_muc: this.selectedCategoryId } : {}),
         },
       });
@@ -474,7 +416,7 @@ export default {
     handleSearch() {
       this.showSuggestions = false;
       this.$router.push({
-        path: "/",
+        path: "/san-pham",
         query: {
           ...(this.searchQuery.trim() ? { search: this.searchQuery.trim() } : {}),
           ...(this.selectedCategoryId ? { id_danh_muc: this.selectedCategoryId } : {}),
@@ -491,7 +433,7 @@ export default {
         if (path.startsWith("http")) {
           return path;
         }
-        return "http://127.0.0.1:8000" + (path.startsWith("/") ? "" : "/") + path;
+        return "" + (path.startsWith("/") ? "" : "/") + path;
       }
       return "https://via.placeholder.com/300?text=No+Image";
     },
@@ -517,8 +459,17 @@ export default {
         maximumFractionDigits: 0,
       }).format(value);
     },
-    goToDetail(id) {
-      this.$router.push("/product/" + id);
+    goToDetail(productOrId) {
+      if (typeof productOrId === 'object' && productOrId !== null) {
+        this.$router.push(getProductDetailUrl(productOrId));
+      } else {
+        const p = this.products.find(x => x.id === productOrId);
+        if (p) {
+          this.$router.push(getProductDetailUrl(p));
+        } else {
+          this.$router.push("/product/" + productOrId);
+        }
+      }
     },
   },
 };

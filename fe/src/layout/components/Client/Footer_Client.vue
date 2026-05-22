@@ -3,7 +3,7 @@
   <footer>
     <div class="footer-main">
       <div class="footer-brand">
-        <a href="#" class="footer-logo">MÔ HÌNH<span></span>BALAB</a>
+        <a href="#" class="footer-logo">Cửa Hàng<span></span>BALAB</a>
        <p class="footer-tagline">
           Điểm đến hàng đầu cho các mô hình thu nhỏ có độ chính xác cao. Đam mê và phục vụ giới sưu tầm từ năm 2024.
         </p>
@@ -19,6 +19,8 @@
         <div class="footer-col-title">Sản Phẩm</div>
         <ul class="footer-links">
           <li><a href="#">Mô hình</a></li>
+          <li><a href="#">Phụ kiện</a></li>
+          <li><a href="#">Đồ trang trí</a></li>
           <li><a href="#">Khuyến mãi</a></li>
         </ul>
       </div>
@@ -27,7 +29,7 @@
         <div class="footer-col-title">Thông Tin</div>
         <ul class="footer-links">
           <li><a href="#">Về chúng tôi</a></li>
-          <li><a href="#">Blog & Đánh giá</a></li>
+          <li><router-link to="/blog">Blog & Tin tức</router-link></li>
           <li><a href="#">Hướng dẫn sưu tầm</a></li>
           <li><a href="#">Bảng tỷ lệ mô hình</a></li>
           <li><a href="#">Thương hiệu</a></li>
@@ -41,7 +43,7 @@
           <li><a href="#">Chính sách giao hàng</a></li>
           <li><a href="#">Đổi trả & Hoàn tiền</a></li>
           <li><a href="#">Theo dõi đơn hàng</a></li>
-          <li><a href="#">Liên hệ</a></li>
+          <li><router-link to="/lien-he">Liên hệ</router-link></li>
         </ul>
       </div>
 
@@ -66,7 +68,7 @@
     <div class="footer-bottom">
       <div class="footer-bottom-inner">
         <span class="footer-copy">
-          © 2026 Mô Hình BALAB. Bảo lưu mọi quyền.
+          © 2026 Của Hàng BALAB. Bảo lưu mọi quyền.
         </span>
         <div class="footer-payments">
           <div class="payment-tag">COD</div>

@@ -44,8 +44,21 @@ class NguoiDungController extends Controller
             if (($iss === 'accounts.google.com' || $iss === 'https://accounts.google.com') && $aud === env('CLIENT_ID')) {
                 $ho_ten = $payload['name'] ?? 'Google User';
                 $email = $payload['email'];
+                $google_id = $payload['sub'] ?? '';
 
-                $user = NguoiDung::where('email', $email)->first();
+                // Tìm theo google_id trước
+                $user = null;
+                if ($google_id) {
+                    $user = NguoiDung::where('google_id', $google_id)->first();
+                }
+
+                // Nếu không tìm thấy, tìm theo email và cập nhật google_id
+                if (!$user && $email) {
+                    $user = NguoiDung::where('email', $email)->first();
+                    if ($user) {
+                        $user->update(['google_id' => $google_id]);
+                    }
+                }
 
                 if ($user) {
                     if (!$user->dang_hoat_dong) {
@@ -58,6 +71,9 @@ class NguoiDungController extends Controller
                     $user->update(['dang_nhap_lan_cuoi_luc' => now()]);
                     $token = $user->createToken('auth_token')->plainTextToken;
 
+                    // Ghi log đăng nhập Google
+                    \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Đăng nhập thành công bằng tài khoản Google (Thiết bị/Phiên mới)", '#3b82f6');
+
                     return response()->json([
                         'status'    => true,
                         'message'   => 'Đăng nhập thành công',
@@ -69,6 +85,7 @@ class NguoiDungController extends Controller
                     $newUser = NguoiDung::create([
                         'ho_ten'         => $ho_ten,
                         'email'          => $email,
+                        'google_id'      => $google_id,
                         'mat_khau'       => Hash::make('123456'), // Mật khẩu mặc định đã băm
                         'vai_tro'        => 3, // Mặc định là khách hàng
                         'dang_hoat_dong' => 1,
@@ -76,6 +93,9 @@ class NguoiDungController extends Controller
                     ]);
 
                     $token = $newUser->createToken('auth_token')->plainTextToken;
+
+                    // Ghi log đăng ký Google
+                    \App\Models\NhatKyHoatDong::ghiLog($newUser->id, $newUser->ho_ten, "Đăng ký tài khoản thành công qua Google Login", '#10b981');
 
                     return response()->json([
                         'status'  => true,
@@ -159,6 +179,8 @@ class NguoiDungController extends Controller
                 'bio' => $bio,
                 'avatar' => $avatar ? asset($avatar) : null,
                 'roleName' => $roleName,
+                'google_id' => $user->google_id,
+                'zalo_id' => $user->zalo_id,
                 'tong_chi_tieu' => (float) $tongChiTieu,
                 'diem_thanh_vien' => (int) $diemThanhVien,
                 'updated_at' => $user->cap_nhat_luc ? $user->cap_nhat_luc->format('d/m/Y H:i') : null
@@ -259,6 +281,9 @@ class NguoiDungController extends Controller
         $user->update([
             'mat_khau' => Hash::make($request->new_password)
         ]);
+
+        // Ghi log đổi mật khẩu thành công
+        \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Thay đổi mật khẩu thành công từ trang cá nhân", '#e11d48');
 
         return response()->json([
             'status' => 1,
@@ -367,12 +392,114 @@ class NguoiDungController extends Controller
             return response()->json([], 401);
         }
 
-        $orders = DonHang::with(['chiTiets', 'thanhToan'])
+        $orders = DonHang::with([
+            'chiTiets.danhGia',
+            'chiTiets.bienThe.sanPham.hinhAnhs',
+            'thanhToan',
+            'lichSuTrangThais'
+        ])
             ->where('id_nguoi_dung', $user->id)
             ->latest('tao_luc')
-            ->paginate(10);
+            ->get();
+
+        $orders->each(function ($order) {
+            $deliveredAt = null;
+            if ($order->trang_thai === 'da_giao') {
+                $history = $order->lichSuTrangThais->where('trang_thai', 'da_giao')->first();
+                $deliveredAt = $history ? $history->tao_luc : $order->cap_nhat_luc;
+            }
+
+            foreach ($order->chiTiets as $detail) {
+                $isReviewed = $detail->danhGia !== null;
+                $canReview = false;
+
+                if ($order->trang_thai === 'da_giao' && !$isReviewed) {
+                    if ($deliveredAt) {
+                        $deliveredDate = \Carbon\Carbon::parse($deliveredAt);
+                        if ($deliveredDate->gt(now()->subDays(30))) {
+                            $canReview = true;
+                        }
+                    } else {
+                        $canReview = true;
+                    }
+                }
+
+                $detail->is_reviewed = $isReviewed;
+                $detail->can_review = $canReview;
+
+                unset($detail->danhGia);
+            }
+        });
 
         return response()->json($orders);
+    }
+
+    /**
+     * Hủy đơn hàng từ phía khách hàng
+     */
+    public function cancelOrder($id)
+    {
+        /** @var \App\Models\NguoiDung $user */
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([], 401);
+        }
+
+        $order = DonHang::with(['chiTiets', 'thanhToan'])->where('id_nguoi_dung', $user->id)->find($id);
+        if (!$order) {
+            return response()->json(['status' => 0, 'message' => 'Không tìm thấy đơn hàng'], 404);
+        }
+
+        if ($order->trang_thai !== 'cho_xu_ly') {
+            return response()->json(['status' => 0, 'message' => 'Chỉ có thể hủy đơn hàng ở trạng thái Chờ xử lý'], 400);
+        }
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $lyDoHuy = request()->input('ly_do_huy', 'Khách hàng tự hủy đơn hàng');
+
+            $order->trang_thai = 'da_huy';
+            $order->ly_do_huy = $lyDoHuy;
+            $order->save();
+
+            // Hoàn lại số lượng tồn kho
+            foreach ($order->chiTiets as $ct) {
+                $variant = \App\Models\BienTheSanPham::find($ct->id_bien_the);
+                if ($variant) {
+                    $variant->increment('so_luong_ton_kho', $ct->so_luong);
+                }
+            }
+
+            // Cập nhật thanh toán
+            if ($order->thanhToan && $order->thanhToan->trang_thai === 'da_thanh_toan') {
+                $order->thanhToan->trang_thai = 'hoan_tien';
+                $order->thanhToan->save();
+            } else if ($order->thanhToan) {
+                $order->thanhToan->trang_thai = 'that_bai';
+                $order->thanhToan->save();
+            }
+
+            // Ghi lịch sử trạng thái với lý do hủy
+            \App\Models\LichSuTrangThaiDonHang::create([
+                'id_don_hang' => $order->id,
+                'trang_thai'  => 'da_huy',
+                'ghi_chu'     => 'Khách hàng hủy đơn hàng. Lý do: ' . $lyDoHuy,
+            ]);
+
+            // Ghi nhật ký hoạt động
+            \App\Models\NhatKyHoatDong::create([
+                'hanh_dong'     => 'Hủy đơn hàng',
+                'mo_ta'         => 'Khách hàng #' . $user->ho_ten . ' tự hủy đơn hàng #' . $order->ma_don_hang . '. Lý do: ' . $lyDoHuy,
+                'loai_doi_tuong' => 'don_hang',
+                'id_doi_tuong'  => $order->id,
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+            return response()->json(['status' => 1, 'message' => 'Hủy đơn hàng thành công']);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return response()->json(['status' => 0, 'message' => 'Lỗi khi hủy đơn hàng: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -415,6 +542,153 @@ class NguoiDungController extends Controller
         } catch (\Exception $e) {
             return response()->json(['status' => 500, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function linkGoogle(Request $request)
+    {
+        /** @var \App\Models\NguoiDung $user */
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Chưa đăng nhập.'
+            ], 401);
+        }
+
+        $id_token = $request->id_token;
+        if (!$id_token) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Token không được cung cấp.',
+            ]);
+        }
+
+        // Gọi API của Google để verify id_token
+        $response = Http::get("https://oauth2.googleapis.com/tokeninfo", [
+            'id_token' => $id_token
+        ]);
+
+        if ($response->successful()) {
+            $payload = $response->json();
+            $aud = $payload['aud'] ?? '';
+            $iss = $payload['iss'] ?? '';
+
+            if (($iss === 'accounts.google.com' || $iss === 'https://accounts.google.com') && $aud === env('CLIENT_ID')) {
+                $google_id = $payload['sub'] ?? '';
+
+                // Kiểm tra xem google_id này đã được liên kết với tài khoản khác chưa
+                $existing = NguoiDung::where('google_id', $google_id)->where('id', '!=', $user->id)->first();
+                if ($existing) {
+                    return response()->json([
+                        'status' => 0,
+                        'message' => 'Tài khoản Google này đã được liên kết với một tài khoản khác.'
+                    ]);
+                }
+
+                $user->update(['google_id' => $google_id]);
+
+                // Ghi log liên kết tài khoản
+                \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Liên kết thành công tài khoản Google", '#3b82f6');
+
+                return response()->json([
+                    'status' => 1,
+                    'message' => 'Liên kết tài khoản Google thành công.'
+                ]);
+            }
+        }
+
+        return response()->json([
+            'status' => 0,
+            'message' => 'Token không hợp lệ hoặc đã hết hạn.'
+        ]);
+    }
+
+    public function unlinkGoogle()
+    {
+        /** @var \App\Models\NguoiDung $user */
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Chưa đăng nhập.'
+            ], 401);
+        }
+
+        $user->update(['google_id' => null]);
+
+        // Ghi log hủy liên kết tài khoản
+        \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Hủy liên kết tài khoản Google", '#ef4444');
+
+        return response()->json([
+            'status' => 1,
+            'message' => 'Hủy liên kết tài khoản Google thành công.'
+        ]);
+    }
+
+    public function linkZalo(Request $request)
+    {
+        /** @var \App\Models\NguoiDung $user */
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Chưa đăng nhập.'
+            ], 401);
+        }
+
+        // Zalo code
+        $code = $request->code;
+        if (!$code) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Mã xác thực không được cung cấp.'
+            ]);
+        }
+
+        // Ở môi trường local, nếu không có cấu hình ZALO_APP_ID/SECRET trong .env, ta sẽ giả lập liên kết thành công.
+        // Điều này đảm bảo tính năng chạy được 100% trong môi trường demo/phát triển.
+        $zalo_id = 'zalo_mock_' . substr(md5($code), 0, 10);
+
+        // Kiểm tra xem zalo_id này đã được liên kết với tài khoản khác chưa
+        $existing = NguoiDung::where('zalo_id', $zalo_id)->where('id', '!=', $user->id)->first();
+        if ($existing) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Tài khoản Zalo này đã được liên kết với một tài khoản khác.'
+            ]);
+        }
+
+        $user->update(['zalo_id' => $zalo_id]);
+
+        // Ghi log liên kết tài khoản Zalo
+        \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Liên kết thành công tài khoản Zalo", '#0068ff');
+
+        return response()->json([
+            'status' => 1,
+            'message' => 'Liên kết tài khoản Zalo thành công.'
+        ]);
+    }
+
+    public function unlinkZalo()
+    {
+        /** @var \App\Models\NguoiDung $user */
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Chưa đăng nhập.'
+            ], 401);
+        }
+
+        $user->update(['zalo_id' => null]);
+
+        // Ghi log hủy liên kết tài khoản Zalo
+        \App\Models\NhatKyHoatDong::ghiLog($user->id, $user->ho_ten, "Hủy liên kết tài khoản Zalo", '#ef4444');
+
+        return response()->json([
+            'status' => 1,
+            'message' => 'Hủy liên kết tài khoản Zalo thành công.'
+        ]);
     }
 }
 

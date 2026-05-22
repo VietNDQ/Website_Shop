@@ -37,7 +37,7 @@
           </div>
           <h2>Giỏ hàng của bạn đang trống</h2>
           <p>Hãy khám phá các mô hình chất lượng và thêm chúng vào giỏ hàng của bạn nhé!</p>
-          <button class="btn-continue-shopping" @click="$router.push('/')">
+          <button class="btn-continue-shopping" @click="$router.push('/san-pham')">
             Tiếp tục mua sắm
           </button>
         </div>
@@ -92,7 +92,7 @@
 
                 <div class="item-details">
                   <div class="item-header">
-                    <h3 class="item-name" @click="$router.push(`/product/${item.id_san_pham}`)">
+                    <h3 class="item-name" @click="goToProductDetail(item, item.id_bien_the)">
                       {{ item.ten_san_pham }}
                     </h3>
                     <!-- Trash button triggers Soft Delete -->
@@ -237,7 +237,7 @@
         </div>
         <div v-else class="recommendations-grid">
           <div v-for="prod in recommendations" :key="prod.id" class="rec-card"
-            @click="$router.push(`/product/${prod.id}`)">
+            @click="goToProductDetail(prod)">
             <div class="rec-img-wrapper">
               <img :src="getProductImage(prod)" :alt="prod.ten_san_pham" />
             </div>
@@ -300,6 +300,7 @@
 <script>
 import axios from "axios";
 import { useCartStore } from "../../store/cartStore";
+import { getProductDetailUrl } from "../../router/utils";
 
 export default {
   name: "Cart",
@@ -368,10 +369,9 @@ export default {
       if (!this.productDetailData || !this.productDetailData.bien_thes) return [];
       const colors = new Set();
       this.productDetailData.bien_thes.forEach(variant => {
-        if (variant.thuoc_tinh && variant.thuoc_tinh.Color) {
-          colors.add(variant.thuoc_tinh.Color);
-        } else if (variant.thuoc_tinh && variant.thuoc_tinh["Màu sắc"]) {
-          colors.add(variant.thuoc_tinh["Màu sắc"]);
+        if (variant.thuoc_tinh) {
+          const colorVal = variant.thuoc_tinh.mau_sac || variant.thuoc_tinh.Color || variant.thuoc_tinh.color || variant.thuoc_tinh["Màu sắc"];
+          if (colorVal) colors.add(colorVal);
         }
       });
       return Array.from(colors);
@@ -380,10 +380,9 @@ export default {
       if (!this.productDetailData || !this.productDetailData.bien_thes) return [];
       const sizes = new Set();
       this.productDetailData.bien_thes.forEach(variant => {
-        if (variant.thuoc_tinh && variant.thuoc_tinh.Size) {
-          sizes.add(variant.thuoc_tinh.Size);
-        } else if (variant.thuoc_tinh && variant.thuoc_tinh["Kích thước"]) {
-          sizes.add(variant.thuoc_tinh["Kích thước"]);
+        if (variant.thuoc_tinh) {
+          const sizeVal = variant.thuoc_tinh.kich_thuoc || variant.thuoc_tinh.Size || variant.thuoc_tinh.size || variant.thuoc_tinh["Kích thước"];
+          if (sizeVal) sizes.add(sizeVal);
         }
       });
       return Array.from(sizes);
@@ -391,8 +390,9 @@ export default {
     selectedVariant() {
       if (!this.productDetailData || !this.productDetailData.bien_thes) return null;
       return this.productDetailData.bien_thes.find(variant => {
-        const color = variant.thuoc_tinh?.Color || variant.thuoc_tinh?.["Màu sắc"];
-        const size = variant.thuoc_tinh?.Size || variant.thuoc_tinh?.["Kích thước"];
+        if (!variant.thuoc_tinh) return false;
+        const color = variant.thuoc_tinh.mau_sac || variant.thuoc_tinh.Color || variant.thuoc_tinh.color || variant.thuoc_tinh["Màu sắc"];
+        const size = variant.thuoc_tinh.kich_thuoc || variant.thuoc_tinh.Size || variant.thuoc_tinh.size || variant.thuoc_tinh["Kích thước"];
         return color === this.selectedColor && size === this.selectedSize;
       });
     },
@@ -416,10 +416,13 @@ export default {
     }
   },
   methods: {
+    goToProductDetail(product, variantId = null) {
+      this.$router.push(getProductDetailUrl(product, variantId));
+    },
     getProductImageUrl(imagePath) {
       if (!imagePath) return "https://via.placeholder.com/150";
       if (imagePath.startsWith("http")) return imagePath;
-      return "http://127.0.0.1:8000" + (imagePath.startsWith("/") ? "" : "/") + imagePath;
+      return "" + (imagePath.startsWith("/") ? "" : "/") + imagePath;
     },
 
     formatCurrency(val) {
@@ -595,7 +598,7 @@ export default {
 
     async loadRecommendations() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/san-pham", {
+        const res = await axios.get("/api/san-pham", {
           params: { sort: "newest" }
         });
         if (res.data && res.data.data) {
@@ -614,7 +617,7 @@ export default {
         const path = main.duong_dan_anh;
         if (!path) return 'https://via.placeholder.com/150';
         if (path.startsWith('http')) return path;
-        return 'http://127.0.0.1:8000' + (path.startsWith('/') ? '' : '/') + path;
+        return '' + (path.startsWith('/') ? '' : '/') + path;
       }
       return 'https://via.placeholder.com/150';
     },
@@ -629,13 +632,13 @@ export default {
       this.productDetailData = null;
 
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/san-pham/${item.id_san_pham}`);
+        const res = await axios.get(`/api/san-pham/${item.id_san_pham}`);
         if (res.data) {
           this.productDetailData = res.data;
           const currentVariant = this.productDetailData.bien_thes.find(v => v.id === item.id_bien_the);
           if (currentVariant && currentVariant.thuoc_tinh) {
-            this.selectedColor = currentVariant.thuoc_tinh.Color || currentVariant.thuoc_tinh["Màu sắc"] || "";
-            this.selectedSize = currentVariant.thuoc_tinh.Size || currentVariant.thuoc_tinh["Kích thước"] || "";
+            this.selectedColor = currentVariant.thuoc_tinh.mau_sac || currentVariant.thuoc_tinh.Color || currentVariant.thuoc_tinh.color || currentVariant.thuoc_tinh["Màu sắc"] || "";
+            this.selectedSize = currentVariant.thuoc_tinh.kich_thuoc || currentVariant.thuoc_tinh.Size || currentVariant.thuoc_tinh.size || currentVariant.thuoc_tinh["Kích thước"] || "";
           }
         }
       } catch (error) {
@@ -669,8 +672,9 @@ export default {
     isSizeAvailable(size) {
       if (!this.productDetailData || !this.selectedColor) return true;
       return this.productDetailData.bien_thes.some(v => {
-        const color = v.thuoc_tinh?.Color || v.thuoc_tinh?.["Màu sắc"];
-        const s = v.thuoc_tinh?.Size || v.thuoc_tinh?.["Kích thước"];
+        if (!v.thuoc_tinh) return false;
+        const color = v.thuoc_tinh.mau_sac || v.thuoc_tinh.Color || v.thuoc_tinh.color || v.thuoc_tinh["Màu sắc"];
+        const s = v.thuoc_tinh.kich_thuoc || v.thuoc_tinh.Size || v.thuoc_tinh.size || v.thuoc_tinh["Kích thước"];
         return color === this.selectedColor && s === size && v.so_luong_ton_kho > 0;
       });
     },

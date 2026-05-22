@@ -256,7 +256,7 @@ class ManagerController extends Controller
                     'code' => '#' . $o->ma_don_hang,
                     'products' => $productNames ?: 'N/A',
                     'total' => number_format($o->tong_thanh_toan, 0, ',', '.') . ' ₫',
-                    'date' => $o->tao_luc ? $o->tao_luc->format('d/m/Y') : 'N/A',
+                    'date' => $o->tao_luc ? $o->tao_luc->format('d/m/Y H:i') : 'N/A',
                     'status' => $o->trang_thai,
                     'statusLabel' => $statusLabels[$o->trang_thai] ?? 'Không xác định'
                 ];
@@ -270,7 +270,7 @@ class ManagerController extends Controller
                 'orders' => $ordersCount,
                 'spent' => number_format($totalSpent, 0, ',', '.') . ' ₫',
                 'group' => $group,
-                'joinDate' => $c->tao_luc ? $c->tao_luc->format('d/m/Y') : 'N/A',
+                'joinDate' => $c->tao_luc ? $c->tao_luc->format('d/m/Y H:i') : 'N/A',
                 'avatarBg' => $gradients[$c->id % count($gradients)],
                 'orderHistory' => $orderHistory
             ];
@@ -295,7 +295,8 @@ class ManagerController extends Controller
             
             // Map payment method to display name
             $paymentMap = [
-                'cod' => 'COD',
+                'cod' => 'Tiền mặt',
+                'tien_mat' => 'Tiền mặt',
                 'vnpay' => 'VNPAY',
                 'momo' => 'MoMo',
                 'chuyen_khoan' => 'Chuyển khoản'
@@ -304,9 +305,11 @@ class ManagerController extends Controller
             $phone = 'N/A';
             $address = 'N/A';
             if (is_array($order->dia_chi_giao_hang)) {
-                $phone = $order->dia_chi_giao_hang['so_dien_thoai'] ?? 'N/A';
+                $phone = $order->dia_chi_giao_hang['so_dien_thoai'] ?? $order->dia_chi_giao_hang['phone'] ?? 'N/A';
                 if (isset($order->dia_chi_giao_hang['dia_chi'])) {
                     $address = $order->dia_chi_giao_hang['dia_chi'];
+                } elseif (isset($order->dia_chi_giao_hang['address'])) {
+                    $address = $order->dia_chi_giao_hang['address'];
                 } else {
                     $addressParts = [];
                     if (isset($order->dia_chi_giao_hang['dia_chi_chi_tiet'])) $addressParts[] = $order->dia_chi_giao_hang['dia_chi_chi_tiet'];
@@ -315,6 +318,31 @@ class ManagerController extends Controller
                     if (count($addressParts) > 0) $address = implode(', ', $addressParts);
                 }
             }
+
+            // Xác định người hủy đơn
+            $nguoiHuy = null;
+            if ($order->trang_thai === 'da_huy') {
+                $huyLog = $order->lichSuTrangThais->where('trang_thai', 'da_huy')->first();
+                if ($huyLog) {
+                    $ghiChu = $huyLog->ghi_chu ?? '';
+                    if (str_contains($ghiChu, 'Khách hàng hủy') || str_contains($ghiChu, 'khach')) {
+                        $nguoiHuy = 'khach';
+                    } else {
+                        $nguoiHuy = 'admin';
+                    }
+                }
+            }
+
+            // Map payment status to display label
+            $paymentStatusLabels = [
+                'chua_thanh_toan' => 'Chưa thanh toán',
+                'cho_thanh_toan'  => 'Chưa thanh toán',
+                'da_thanh_toan'   => 'Đã thanh toán',
+                'hoan_tien'       => 'Đã hoàn tiền',
+                'that_bai'        => 'Thất bại',
+                'cho_xu_ly'       => 'Chưa thanh toán',
+            ];
+            $paymentStatus = $order->thanhToan ? $order->thanhToan->trang_thai : 'cho_thanh_toan';
 
             return [
                 'id' => $order->id,
@@ -326,9 +354,12 @@ class ManagerController extends Controller
                 'total' => number_format($order->tong_thanh_toan, 0, ',', '.') . ' ₫',
                 'raw_total' => $order->tong_thanh_toan,
                 'payment' => $paymentMap[$paymentMethod] ?? $paymentMethod,
-                'payment_status' => $order->thanhToan ? $order->thanhToan->trang_thai : 'cho_thanh_toan',
+                'payment_status' => $paymentStatus,
+                'payment_status_label' => $paymentStatusLabels[$paymentStatus] ?? $paymentStatus,
                 'date' => $order->tao_luc ? $order->tao_luc->format('d/m/Y H:i') : 'N/A',
                 'status' => $order->trang_thai,
+                'ly_do_huy' => $order->ly_do_huy,
+                'nguoi_huy' => $nguoiHuy,
                 'chi_tiets' => $order->chiTiets->map(function ($ct) {
                     return [
                         'ten' => $ct->ten_bien_the_luc_mua,
@@ -337,7 +368,7 @@ class ManagerController extends Controller
                         'thanh_tien' => number_format($ct->thanh_tien, 0, ',', '.') . ' ₫'
                     ];
                 }),
-                'lich_su' => $order->lichSuTrangThais->map(function ($ls) {
+                'lich_su' => $order->lichSuTrangThais->sortBy('tao_luc')->values()->map(function ($ls) {
                     return [
                         'trang_thai' => $ls->trang_thai,
                         'thoi_gian' => $ls->tao_luc ? $ls->tao_luc->format('d/m/Y H:i') : 'N/A',
@@ -356,7 +387,8 @@ class ManagerController extends Controller
     public function updateOrderStatus(Request $request, $id)
     {
         $request->validate([
-            'trang_thai' => 'required|in:cho_xu_ly,dang_chuan_bi,dang_giao,da_giao,da_huy'
+            'trang_thai' => 'required|in:cho_xu_ly,dang_chuan_bi,dang_giao,da_giao,da_huy,hoan_tien',
+            'ly_do' => 'nullable|string|max:500',
         ]);
 
         $order = DonHang::with(['chiTiets', 'thanhToan'])->find($id);
@@ -366,64 +398,128 @@ class ManagerController extends Controller
 
         $oldStatus = $order->trang_thai;
         $newStatus = $request->trang_thai;
-        
+        $lyDo = $request->input('ly_do', '');
+
         if ($oldStatus === $newStatus) {
             return response()->json(['status' => 1, 'message' => 'Trạng thái không thay đổi']);
         }
 
-        if ($oldStatus === 'da_huy' || $oldStatus === 'da_giao') {
-            return response()->json(['status' => 0, 'message' => 'Không thể thay đổi trạng thái của đơn hàng đã hoàn tất hoặc đã hủy'], 400);
+        // Quy tắc chuyển trạng thái hợp lệ
+        $allowedTransitions = [
+            'cho_xu_ly'    => ['dang_chuan_bi', 'da_huy'],
+            'dang_chuan_bi'=> ['dang_giao', 'da_huy'],
+            'dang_giao'    => ['da_giao', 'da_huy'],
+            'da_giao'      => ['hoan_tien'],  // Chỉ cho phép chuyển sang hoàn tiền
+            'da_huy'       => [],             // Không thể thay đổi
+            'hoan_tien'    => [],             // Không thể thay đổi
+        ];
+
+        $validNext = $allowedTransitions[$oldStatus] ?? [];
+        if (!in_array($newStatus, $validNext)) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Không thể chuyển từ trạng thái "' . $oldStatus . '" sang "' . $newStatus . '"'
+            ], 400);
         }
 
         DB::beginTransaction();
         try {
             $order->trang_thai = $newStatus;
+
+            // Lưu lý do hủy nếu là hủy đơn
+            if ($newStatus === 'da_huy' && $lyDo) {
+                $order->ly_do_huy = $lyDo;
+            }
+
             $order->save();
 
-            // Nếu đơn hàng bị hủy, hoàn lại số lượng tồn kho
+            // Xử lý khi hủy đơn
             if ($newStatus === 'da_huy') {
+                // Hoàn lại số lượng tồn kho
                 foreach ($order->chiTiets as $ct) {
                     $variant = BienTheSanPham::find($ct->id_bien_the);
                     if ($variant) {
                         $variant->increment('so_luong_ton_kho', $ct->so_luong);
                     }
                 }
-                
+
                 // Cập nhật thanh toán
-                if ($order->thanhToan && $order->thanhToan->trang_thai === 'da_thanh_toan') {
-                    $order->thanhToan->trang_thai = 'hoan_tien';
-                    $order->thanhToan->save();
-                } else if ($order->thanhToan) {
-                    $order->thanhToan->trang_thai = 'that_bai';
+                if ($order->thanhToan) {
+                    if ($order->thanhToan->trang_thai === 'da_thanh_toan') {
+                        $order->thanhToan->trang_thai = 'hoan_tien';
+                    } else {
+                        $order->thanhToan->trang_thai = 'that_bai';
+                    }
                     $order->thanhToan->save();
                 }
+
+                $ghiChuLs = 'Admin hủy đơn hàng' . ($lyDo ? '. Lý do: ' . $lyDo : '');
             }
-            
-            // Nếu đơn hàng đã giao thành công và là COD, cập nhật thanh toán
+
+            // Xử lý khi xác nhận hoàn tiền (da_giao → hoan_tien)
+            if ($newStatus === 'hoan_tien') {
+                // Cập nhật thanh toán sang hoàn tiền
+                if ($order->thanhToan) {
+                    $order->thanhToan->trang_thai = 'hoan_tien';
+                    $order->thanhToan->save();
+                }
+
+                // Hoàn lại tồn kho vì hàng được trả về
+                foreach ($order->chiTiets as $ct) {
+                    $variant = BienTheSanPham::find($ct->id_bien_the);
+                    if ($variant) {
+                        $variant->increment('so_luong_ton_kho', $ct->so_luong);
+                    }
+                }
+
+                $ghiChuLs = 'Admin xác nhận hoàn tiền' . ($lyDo ? '. Lý do: ' . $lyDo : '');
+            }
+
+            // Xử lý khi đã giao thành công và là COD
             if ($newStatus === 'da_giao' && $order->thanhToan) {
-                if ($order->thanhToan->phuong_thuc === 'cod') {
+                if (in_array($order->thanhToan->phuong_thuc, ['cod', 'tien_mat'])) {
                     $order->thanhToan->trang_thai = 'da_thanh_toan';
                     $order->thanhToan->save();
                 }
             }
 
             // Ghi lịch sử trạng thái
+            $statusLabels = [
+                'cho_xu_ly'     => 'Chờ xác nhận',
+                'dang_chuan_bi' => 'Đang chuẩn bị',
+                'dang_giao'     => 'Đang giao hàng',
+                'da_giao'       => 'Đã giao',
+                'da_huy'        => 'Đã hủy',
+                'hoan_tien'     => 'Hoàn tiền',
+            ];
+
+            $defaultGhiChu = 'Admin cập nhật: ' . ($statusLabels[$newStatus] ?? $newStatus);
             LichSuTrangThaiDonHang::create([
                 'id_don_hang' => $order->id,
-                'trang_thai' => $newStatus,
-                'ghi_chu' => 'Admin cập nhật trạng thái',
+                'trang_thai'  => $newStatus,
+                'ghi_chu'     => $ghiChuLs ?? $defaultGhiChu,
             ]);
 
             // Ghi nhật ký hoạt động
             \App\Models\NhatKyHoatDong::create([
-                'hanh_dong' => 'Cập nhật đơn hàng',
-                'mo_ta' => 'Cập nhật trạng thái đơn hàng #' . $order->ma_don_hang . ' thành ' . $newStatus,
+                'hanh_dong'      => 'Cập nhật đơn hàng',
+                'mo_ta'          => 'Cập nhật trạng thái đơn #' . $order->ma_don_hang . ': ' . ($statusLabels[$oldStatus] ?? $oldStatus) . ' → ' . ($statusLabels[$newStatus] ?? $newStatus) . ($lyDo ? ' | Lý do: ' . $lyDo : ''),
                 'loai_doi_tuong' => 'don_hang',
-                'id_doi_tuong' => $order->id,
+                'id_doi_tuong'   => $order->id,
             ]);
 
             DB::commit();
-            return response()->json(['status' => 1, 'message' => 'Cập nhật trạng thái thành công']);
+
+            $messages = [
+                'da_huy'    => 'Đã hủy đơn hàng thành công',
+                'hoan_tien' => 'Đã xác nhận hoàn tiền thành công',
+                'da_giao'   => 'Đã xác nhận giao hàng thành công',
+            ];
+
+            return response()->json([
+                'status'  => 1,
+                'message' => $messages[$newStatus] ?? 'Cập nhật trạng thái thành công'
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 0, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);

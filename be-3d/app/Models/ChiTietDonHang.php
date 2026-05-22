@@ -32,4 +32,9 @@ class ChiTietDonHang extends Model
     {
         return $this->belongsTo(BienTheSanPham::class, 'id_bien_the');
     }
+
+    public function danhGia()
+    {
+        return $this->hasOne(DanhGia::class, 'id_chi_tiet_don_hang');
+    }
 }

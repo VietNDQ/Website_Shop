@@ -306,7 +306,7 @@
 <script>
 import axios from 'axios';
 
-const BASE = 'http://127.0.0.1:8000/api/quan-ly';
+const BASE = '/api/quan-ly';
 
 export default {
   name: 'AdminPromotions',
@@ -574,5 +574,5 @@ export default {
 </script>
 
 <style scoped>
-@import "/style_admin/promotions.css";
+@import "../../../public/style_admin/promotions.css";
 </style>

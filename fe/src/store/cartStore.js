@@ -42,7 +42,7 @@ export const useCartStore = defineStore('cart', {
       if (this.isLoggedIn()) {
         this.loading = true;
         try {
-          const res = await axios.get("http://127.0.0.1:8000/api/khach-hang/gio-hang", {
+          const res = await axios.get("/api/khach-hang/gio-hang", {
             headers: this.getHeaders(),
           });
           if (res.data && res.data.status) {
@@ -93,7 +93,7 @@ export const useCartStore = defineStore('cart', {
       if (this.isLoggedIn()) {
         try {
           const res = await axios.post(
-            "http://127.0.0.1:8000/api/khach-hang/gio-hang/add",
+            "/api/khach-hang/gio-hang/add",
             {
               id_bien_the: variant.id,
               so_luong: qty
@@ -175,7 +175,7 @@ export const useCartStore = defineStore('cart', {
       if (this.isLoggedIn()) {
         try {
           const res = await axios.post(
-            "http://127.0.0.1:8000/api/khach-hang/gio-hang/update",
+            "/api/khach-hang/gio-hang/update",
             {
               id_bien_the: variantId,
               so_luong: qty
@@ -217,7 +217,7 @@ export const useCartStore = defineStore('cart', {
       if (this.isLoggedIn()) {
         try {
           const res = await axios.post(
-            "http://127.0.0.1:8000/api/khach-hang/gio-hang/remove",
+            "/api/khach-hang/gio-hang/remove",
             { id_bien_the: variantId },
             { headers: this.getHeaders() }
           );
@@ -252,7 +252,7 @@ export const useCartStore = defineStore('cart', {
           }));
 
           const res = await axios.post(
-            "http://127.0.0.1:8000/api/khach-hang/gio-hang/sync",
+            "/api/khach-hang/gio-hang/sync",
             { cart_items: payload },
             { headers: this.getHeaders() }
           );
@@ -281,7 +281,7 @@ export const useCartStore = defineStore('cart', {
       if (this.isLoggedIn()) {
         try {
           const res = await axios.post(
-            "http://127.0.0.1:8000/api/khach-hang/gio-hang/clear",
+            "/api/khach-hang/gio-hang/clear",
             {},
             { headers: this.getHeaders() }
           );

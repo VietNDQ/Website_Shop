@@ -442,7 +442,7 @@
             <button class="btn-success-history" @click="$router.push('/thong-tin-ca-nhan')">
               <i class="fa-solid fa-list-check"></i> Xem lịch sử đơn hàng
             </button>
-            <button class="btn-success-home" @click="$router.push('/')">
+            <button class="btn-success-home" @click="$router.push('/san-pham')">
               Tiếp tục mua sắm
             </button>
           </div>
@@ -459,7 +459,7 @@
             <h3 class="qr-modal-title">
               <i class="fa-solid fa-qrcode"></i> Thanh Toán Chuyển Khoản
             </h3>
-            <button class="qr-modal-close-btn" @click="showQRModal = false">
+            <button class="qr-modal-close-btn" @click="closeQRModal">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -499,7 +499,7 @@
           </div>
           
           <div class="qr-modal-footer">
-            <button class="btn-cancel" @click="showQRModal = false">Đóng</button>
+            <button class="btn-cancel" @click="closeQRModal">Đóng</button>
             <button class="btn-paid" @click="confirmPaid">
               <i class="fa-solid fa-circle-check"></i> Đã thanh toán
             </button>
@@ -661,7 +661,7 @@ export default {
     getProductImageUrl(imagePath) {
       if (!imagePath) return "https://via.placeholder.com/60";
       if (imagePath.startsWith("http")) return imagePath;
-      return "http://127.0.0.1:8000" + (imagePath.startsWith("/") ? "" : "/") + imagePath;
+      return "" + (imagePath.startsWith("/") ? "" : "/") + imagePath;
     },
 
     formatCurrency(val) {
@@ -681,7 +681,7 @@ export default {
 
     async fetchProvinces() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/viettelpost/provinces");
+        const res = await axios.get("/api/viettelpost/provinces");
         if (res.data && res.data.data) {
           this.provincesList = res.data.data;
         } else if (res.data) {
@@ -696,7 +696,7 @@ export default {
       if (!provinceId) return;
       this.loadingDistricts = true;
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/viettelpost/districts/${provinceId}`);
+        const res = await axios.get(`/api/viettelpost/districts/${provinceId}`);
         if (res.data && res.data.data) {
           this.districtsList = res.data.data;
         } else if (res.data) {
@@ -713,7 +713,7 @@ export default {
       if (!districtId) return;
       this.loadingWards = true;
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/viettelpost/wards/${districtId}`);
+        const res = await axios.get(`/api/viettelpost/wards/${districtId}`);
         if (res.data && res.data.data) {
           this.wardsList = res.data.data;
         } else if (res.data) {
@@ -772,7 +772,7 @@ export default {
     async loadAddresses() {
       const token = localStorage.getItem("token_client");
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/khach-hang/dia-chi", {
+        const res = await axios.get("/api/khach-hang/dia-chi", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data) {
@@ -803,7 +803,7 @@ export default {
       const token = localStorage.getItem("token_client");
 
       try {
-        const res = await axios.post("http://127.0.0.1:8000/api/khach-hang/dia-chi", {
+        const res = await axios.post("/api/khach-hang/dia-chi", {
           so_dien_thoai: na.so_dien_thoai,
           dia_chi_chi_tiet: na.dia_chi_chi_tiet,
           thanh_pho: na.thanh_pho,
@@ -854,7 +854,7 @@ export default {
       const token = localStorage.getItem("token_client");
       if (!token) return;
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/thong-tin-ca-nhan/profile", {
+        const res = await axios.get("/api/thong-tin-ca-nhan/profile", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data && res.data.status === 1) {
@@ -876,7 +876,7 @@ export default {
       this.voucherSuccess = "";
       try {
         const code = this.voucherCode.toUpperCase().trim();
-        const res = await axios.get(`http://127.0.0.1:8000/api/ma-giam-gia/kiem-tra/${code}`);
+        const res = await axios.get(`/api/ma-giam-gia/kiem-tra/${code}`);
         if (res.data && res.data.status) {
           const voucher = res.data.voucher;
           if (this.cartTotal < voucher.don_hang_toi_thieu) {
@@ -950,12 +950,15 @@ export default {
       }
 
       try {
-        const res = await axios.post("http://127.0.0.1:8000/api/khach-hang/dat-hang", payload, {
+        const res = await axios.post("/api/khach-hang/dat-hang", payload, {
           headers: headers
         });
 
         if (res.data && res.data.order) {
-          this.showToast("Đặt hàng thành công!", "success");
+          // Chỉ hiển thị thông báo thành công lập tức nếu KHÔNG phải chuyển khoản (online_banking)
+          if (this.selectedPaymentMethod !== 'online_banking') {
+            this.showToast("Đặt hàng thành công!", "success");
+          }
           
           // Chỉ xóa các sản phẩm đã được chọn thanh toán, giữ lại phần còn lại
           if (this.buyNowItem) {
@@ -992,6 +995,12 @@ export default {
       }
     },
     confirmPaid() {
+      this.showToast("Đặt hàng thành công!", "success");
+      this.showQRModal = false;
+      this.orderSuccess = true;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    closeQRModal() {
       this.showQRModal = false;
       this.orderSuccess = true;
       window.scrollTo({ top: 0, behavior: "smooth" });

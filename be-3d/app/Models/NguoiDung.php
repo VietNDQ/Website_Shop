@@ -9,7 +9,24 @@ use Laravel\Sanctum\HasApiTokens;
 
 class NguoiDung extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable {
+        HasApiTokens::createToken as traitCreateToken;
+    }
+
+    public function createToken(string $name, array $abilities = ['*'], \DateTimeInterface $expiresAt = null)
+    {
+        // Giới hạn 2 thiết bị: Nếu số token hiện tại >= 2, ta xóa bớt các token cũ nhất
+        // Ví dụ: có 2 token, ta xóa 1 token cũ nhất. Có 3 token (lỗi tồn đọng), ta xóa 2.
+        $tokensCount = $this->tokens()->count();
+        if ($tokensCount >= 2) {
+            $this->tokens()->orderBy('created_at', 'asc')
+                ->limit($tokensCount - 1)
+                ->get()
+                ->each->delete();
+        }
+
+        return $this->traitCreateToken($name, $abilities, $expiresAt);
+    }
 
     protected $table = 'nguoi_dung';
 
@@ -19,6 +36,8 @@ class NguoiDung extends Authenticatable
     protected $fillable = [
         'ho_ten',
         'email',
+        'google_id',
+        'zalo_id',
         'mat_khau',
         'vai_tro', // 1: quan_tri, 2: quan_ly, 3: khach_hang (Mặc định)
         'dang_hoat_dong',
@@ -52,5 +71,22 @@ class NguoiDung extends Authenticatable
     public function donHangs()
     {
         return $this->hasMany(DonHang::class, 'id_nguoi_dung');
+    }
+
+    public function danhGias()
+    {
+        return $this->hasMany(DanhGia::class, 'id_nguoi_dung');
+    }
+
+    public function yeuThichs()
+    {
+        return $this->belongsToMany(SanPham::class, 'yeu_thich', 'id_nguoi_dung', 'id_san_pham')
+            ->withTimestamps('tao_luc', 'cap_nhat_luc');
+    }
+
+    public function daXems()
+    {
+        return $this->belongsToMany(SanPham::class, 'da_xem', 'id_nguoi_dung', 'id_san_pham')
+            ->withTimestamps('tao_luc', 'cap_nhat_luc');
     }
 }

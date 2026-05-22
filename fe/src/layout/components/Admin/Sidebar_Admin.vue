@@ -15,7 +15,7 @@
           <polyline points="5 19 12 12 19 19" />
         </svg>
       </div>
-      <span class="logo-text">Mô Hình BALAB</span>
+      <span class="logo-text">BALAB</span>
       <button class="collapse-btn" @click="toggleSidebar">
         <svg
           width="16"
@@ -47,8 +47,9 @@
     <!-- Navigation -->
     <div class="sidebar-nav">
       <!-- Dashboard -->
-      <div class="nav-section-label">Tổng quan</div>
+      <div v-if="currentUserRole === 1 || currentUserRole === 2" class="nav-section-label">Tổng quan</div>
       <router-link
+        v-if="currentUserRole === 1 || currentUserRole === 2"
         to="/nhan-vien/dashboard"
         class="nav-item"
         exact-active-class="active"
@@ -73,6 +74,7 @@
       </router-link>
 
       <router-link
+        v-if="currentUserRole === 1 || currentUserRole === 2"
         to="/nhan-vien/analytics"
         class="nav-item"
         active-class="active"
@@ -96,9 +98,10 @@
       </router-link>
 
       <!-- Quản lý -->
-      <div class="nav-section-label">Quản lý</div>
+      <div v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 4 || currentUserRole === 5" class="nav-section-label">Quản lý</div>
 
       <router-link
+        v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 4 || currentUserRole === 5"
         to="/nhan-vien/products"
         class="nav-item"
         active-class="active"
@@ -124,6 +127,7 @@
       </router-link>
 
       <router-link
+        v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 4 || currentUserRole === 5"
         to="/nhan-vien/orders"
         class="nav-item"
         active-class="active"
@@ -148,6 +152,7 @@
       </router-link>
 
       <router-link
+        v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 4"
         to="/nhan-vien/categories"
         class="nav-item"
         active-class="active"
@@ -171,6 +176,7 @@
       </router-link>
 
       <div
+        v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 5"
         class="nav-item"
         :class="{ expanded: expandedMenus.includes('customers') }"
         @click="toggleMenu('customers')"
@@ -204,7 +210,7 @@
         </svg>
         <div class="nav-tooltip">Khách hàng</div>
       </div>
-      <div class="nav-submenu" v-show="expandedMenus.includes('customers')">
+      <div class="nav-submenu" v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 5" v-show="expandedMenus.includes('customers')">
         <router-link
           to="/nhan-vien/customers"
           class="nav-subitem"
@@ -226,9 +232,10 @@
       </div>
 
       <!-- Khuyến mãi -->
-      <div class="nav-section-label">Marketing</div>
+      <div v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 5" class="nav-section-label">Marketing</div>
 
       <router-link
+        v-if="currentUserRole === 1 || currentUserRole === 2 || currentUserRole === 5"
         to="/nhan-vien/promotions"
         class="nav-item"
         active-class="active"
@@ -253,9 +260,10 @@
       </router-link>
 
       <!-- Nội dung -->
-      <div class="nav-section-label">Nội dung</div>
+      <div v-if="currentUserRole === 1 || currentUserRole === 2" class="nav-section-label">Nội dung</div>
 
       <router-link
+        v-if="currentUserRole === 1 || currentUserRole === 2"
         to="/nhan-vien/banners"
         class="nav-item"
         active-class="active"
@@ -278,7 +286,7 @@
         <div class="nav-tooltip">Banner</div>
       </router-link>
 
-      <router-link to="/nhan-vien/blog" class="nav-item" active-class="active">
+      <router-link v-if="currentUserRole === 1 || currentUserRole === 2" to="/nhan-vien/blog" class="nav-item" active-class="active">
         <div class="nav-icon">
           <svg
             width="18"
@@ -300,9 +308,9 @@
       </router-link>
 
       <!-- Hệ thống -->
-      <div class="nav-section-label">Hệ thống</div>
+      <div v-if="currentUserRole === 1" class="nav-section-label">Hệ thống</div>
 
-      <router-link to="/nhan-vien/staff" class="nav-item" active-class="active">
+      <router-link v-if="currentUserRole === 1" to="/nhan-vien/staff" class="nav-item" active-class="active">
         <div class="nav-icon">
           <svg
             width="18"
@@ -320,19 +328,8 @@
         <div class="nav-tooltip">Nhân viên</div>
       </router-link>
 
-      <!-- <router-link to="/nhan-vien/profile" class="nav-item" active-class="active">
-        <div class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-            <path d="M16 3.13a4 4 0 010 7.75" />
-          </svg>
-        </div>
-        <span class="nav-label">Hồ sơ cá nhân</span>
-        <div class="nav-tooltip">Hồ sơ cá nhân</div>
-      </router-link> -->
-
       <router-link
+        v-if="currentUserRole === 1"
         to="/nhan-vien/settings"
         class="nav-item"
         active-class="active"
@@ -402,7 +399,7 @@
         </div>
         <h3>Xác nhận đăng xuất</h3>
         <p>
-          Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị Mô Hình BALAB?
+          Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị Của Hàng BALAB?
         </p>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showLogoutModal = false">
@@ -417,15 +414,18 @@
 
 <script>
 import axios from "axios";
+import { useAuthStore } from "../../../store/authStore";
 
 export default {
   name: "Sidebar_Admin",
+  setup() {
+    const authStore = useAuthStore();
+    return { authStore };
+  },
   data() {
     return {
       isCollapsed: false,
       expandedMenus: [],
-      userName: "Admin Việt",
-      userRole: "Super Admin",
       userAvatar: "",
       showLogoutModal: false,
       sidebarStats: {
@@ -436,11 +436,26 @@ export default {
     };
   },
   computed: {
+    userName() {
+      return this.authStore.hoTen || "Nhân viên";
+    },
+    userRole() {
+      const roleMap = {
+        1: "Super Admin",
+        2: "Quản lý",
+        4: "Nhân viên kho",
+        5: "Nhân viên bán hàng"
+      };
+      return roleMap[this.authStore.vaiTro] || "Nhân viên";
+    },
+    currentUserRole() {
+      return this.authStore.vaiTro;
+    },
     avatarStyle() {
       if (this.userAvatar) {
         const imgUrl = this.userAvatar.startsWith("http")
           ? this.userAvatar
-          : "http://127.0.0.1:8000/" + this.userAvatar;
+          : "/" + this.userAvatar;
         return {
           backgroundImage: `url(${imgUrl})`,
           backgroundSize: "cover",
@@ -463,15 +478,13 @@ export default {
   },
   methods: {
     loadUserData() {
-      this.userName = localStorage.getItem("ho_ten") || "Admin Việt";
-      this.userRole = localStorage.getItem("ten_vai_tro") || "Super Admin";
-      this.userAvatar = localStorage.getItem("anh_dai_dien") || "";
+      this.userAvatar = this.authStore.anhDaiDien || "";
     },
     async fetchSidebarStats() {
       try {
-        const token = localStorage.getItem("token_admin");
+        const token = this.authStore.tokenAdmin;
         if (!token) return;
-        const response = await axios.get("http://127.0.0.1:8000/api/quan-ly/sidebar-stats", {
+        const response = await axios.get("/api/quan-ly/sidebar-stats", {
           headers: {
             Authorization: "Bearer " + token,
           },
@@ -500,10 +513,10 @@ export default {
     async confirmLogout() {
       this.showLogoutModal = false;
       try {
-        const token = localStorage.getItem("token_admin");
+        const token = this.authStore.tokenAdmin;
         if (token) {
           await axios.post(
-            "http://127.0.0.1:8000/api/dang-xuat",
+            "/api/dang-xuat",
             {},
             {
               headers: {
@@ -515,13 +528,8 @@ export default {
       } catch (err) {
         console.error("Error logging out on backend:", err);
       } finally {
-        // Clear local storage credentials
-        localStorage.removeItem("token_admin");
-        localStorage.removeItem("ho_ten");
-        localStorage.removeItem("ten_vai_tro");
-        localStorage.removeItem("anh_dai_dien");
-        localStorage.removeItem("email");
-
+        // Clear Pinia store and local storage credentials
+        this.authStore.clearAdminData();
         // Redirect to login
         this.$router.push("/login");
       }

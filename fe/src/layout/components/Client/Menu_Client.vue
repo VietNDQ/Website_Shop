@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <nav class="main-nav-bar">
     <div class="nav-inner">
       <a href="/" class="nav-logo">
@@ -60,7 +60,6 @@
           </button>
         </div>
       </div>
-      <button class="btn-menu-search" @click="submitMenuSearch">Tìm</button>
 
       <button class="btn-cart" @click="$router.push('/gio-hang')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -106,6 +105,7 @@
 <script>
 import axios from "axios";
 import { useCartStore } from "../../../store/cartStore";
+import { useWishlistStore } from "../../../store/wishlistStore";
 
 export default {
   data() {
@@ -148,6 +148,9 @@ export default {
     const cartStore = useCartStore();
     cartStore.loadCart();
 
+    const wishlistStore = useWishlistStore();
+    wishlistStore.loadAll();
+
     window.addEventListener("clientLoginUpdated", this.onLoginUpdated);
     document.addEventListener("click", this.closeDropdown);
   },
@@ -159,7 +162,7 @@ export default {
   methods: {
     async fetchCategories() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/danh-muc");
+        const res = await axios.get("/api/danh-muc");
         this.categories = Array.isArray(res.data) ? res.data : [];
       } catch {
         this.categories = [];
@@ -199,7 +202,7 @@ export default {
       }
 
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/tim-kiem/goi-y", {
+        const res = await axios.get("/api/tim-kiem/goi-y", {
           params: {
             q: keyword,
             id_danh_muc: this.selectedCategoryId || "",
@@ -227,7 +230,7 @@ export default {
     },
     async trackMenuSuggestionClick(item) {
       try {
-        await axios.post("http://127.0.0.1:8000/api/tim-kiem/track", {
+        await axios.post("/api/tim-kiem/track", {
           keyword: this.menuSearchQuery,
           suggestion: item.label || "",
           type: item.type || "product",
@@ -243,7 +246,7 @@ export default {
       this.showMenuSuggestions = false;
 
       try {
-        await axios.get("http://127.0.0.1:8000/api/tim-kiem", {
+        await axios.get("/api/tim-kiem", {
           params: {
             q: this.menuSearchQuery || "",
             id_danh_muc: this.selectedCategoryId || "",
@@ -252,7 +255,7 @@ export default {
         });
       } catch {}
 
-      this.$router.push({ path: "/", query: params });
+      this.$router.push({ path: "/san-pham", query: params });
     },
     closeDropdown() {
       this.showDropdown = false;
@@ -265,6 +268,9 @@ export default {
       this.checkLoginStatus();
       const cartStore = useCartStore();
       await cartStore.syncCartWithBackend();
+
+      const wishlistStore = useWishlistStore();
+      await wishlistStore.syncWithBackend();
     },
     checkLoginStatus() {
       const token = localStorage.getItem("token_client");
@@ -274,7 +280,7 @@ export default {
         this.userName = name || "Đang tải...";
 
         axios
-          .get("http://127.0.0.1:8000/api/check-token", {
+          .get("/api/check-token", {
             headers: { Authorization: "Bearer " + token },
           })
           .then((res) => {
@@ -301,6 +307,9 @@ export default {
 
       const cartStore = useCartStore();
       await cartStore.clearCart();
+
+      const wishlistStore = useWishlistStore();
+      await wishlistStore.loadAll();
 
       if (showAlert) {
         if (this.$toast) {

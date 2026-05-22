@@ -66,11 +66,11 @@ class CustomerController extends Controller
     {
         $query = SanPham::with(['hinhAnhs', 'danhMuc', 'bienThes'])
             ->whereIn('tinh_trang', [0, 1]); // Chỉ lấy sản phẩm đang bán (1) hoặc hết hàng (0)
-        
+
         if ($request->id_danh_muc) {
             $query->where('id_danh_muc', $request->id_danh_muc);
         }
-        
+
         if ($request->search) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -78,7 +78,7 @@ class CustomerController extends Controller
                   ->orWhere('mo_ta', 'like', "%{$search}%");
             });
         }
-        
+
         if ($request->scale) {
             $scale = $request->scale;
             $query->where(function($q) use ($scale) {
@@ -86,10 +86,17 @@ class CustomerController extends Controller
                   ->orWhere('mo_ta', 'like', "%{$scale}%");
             });
         }
-        
+
+        if ($request->min_price) {
+            $query->where('gia_co_ban', '>=', $request->min_price);
+        }
+        if ($request->max_price) {
+            $query->where('gia_co_ban', '<=', $request->max_price);
+        }
+
         // Ưu tiên sản phẩm đang bán (1) lên đầu, sau đó sắp xếp theo tiêu chí lọc
         $query->orderBy('tinh_trang', 'desc');
-        
+
         if ($request->sort) {
             if ($request->sort === 'price_asc') {
                 $query->orderBy('gia_co_ban', 'asc');
@@ -101,8 +108,11 @@ class CustomerController extends Controller
         } else {
             $query->orderBy('tao_luc', 'desc');
         }
-        
-        return response()->json($query->paginate(12));
+
+        $perPage = (int) $request->input('per_page', 12);
+        $perPage = max(1, min($perPage, 100));
+
+        return response()->json($query->paginate($perPage));
     }
 
     public function search(Request $request)
@@ -234,7 +244,7 @@ class CustomerController extends Controller
     {
         return DB::transaction(function () use ($request) {
             $user = auth('sanctum')->user();
-            
+
             if ($user && $request->id_dia_chi) {
                 $address = DiaChiNguoiDung::findOrFail($request->id_dia_chi);
                 $ten = $user->ho_ten;
@@ -269,6 +279,19 @@ class CustomerController extends Controller
 
                 // Update inventory
                 $variant->decrement('so_luong_ton_kho', $item['so_luong']);
+                $variant->refresh();
+                if ($variant->so_luong_ton_kho < 5) {
+                    try {
+                        \App\Models\ThongBao::taoThongBao(
+                            "Sản phẩm sắp hết hàng",
+                            "Biến thể " . $variant->sanPham->ten_san_pham . " (" . collect($variant->thuoc_tinh)->map(fn($v, $k) => "$k: $v")->implode(' - ') . ") chỉ còn " . $variant->so_luong_ton_kho . " sản phẩm.",
+                            'het_hang',
+                            '/nhan-vien/products'
+                        );
+                    } catch (\Exception $ex) {
+                        \Illuminate\Support\Facades\Log::error('Notification error in low stock warning: ' . $ex->getMessage());
+                    }
+                }
                 NhatKyTonKho::create([
                     'id_bien_the' => $variant->id,
                     'so_luong_thay_doi' => -$item['so_luong'],
@@ -302,12 +325,12 @@ class CustomerController extends Controller
                     $maxDiscountFromCoins = $userPoints;
                     $remainingPayableBeforeCoins = max(0, $tongTienHang - $tienGiam);
                     $coinDiscount = min($maxDiscountFromCoins, $remainingPayableBeforeCoins);
-                    
+
                     $pointsUsed = (int) $coinDiscount;
                     if ($pointsUsed > 0) {
                         $user->decrement('diem_thanh_vien', $pointsUsed);
                     }
-                    
+
                     $tienGiam += $coinDiscount;
                 }
             }
@@ -337,6 +360,26 @@ class CustomerController extends Controller
                 ChiTietDonHang::create($item);
             }
 
+            // Tạo thông báo đơn hàng mới
+            try {
+                \App\Models\ThongBao::taoThongBao(
+                    "Đơn hàng mới {$order->ma_don_hang}",
+                    "Khách hàng {$ten} vừa đặt đơn hàng {$order->ma_don_hang} với tổng thanh toán " . number_format($tongThanhToan) . "đ.",
+                    'don_hang_moi',
+                    '/nhan-vien/orders'
+                );
+            } catch (\Exception $ex) {
+                \Illuminate\Support\Facades\Log::error('Notification error in checkout: ' . $ex->getMessage());
+            }
+
+            // Ghi log đặt hàng thành công
+            \App\Models\NhatKyHoatDong::ghiLog(
+                $user ? $user->id : null,
+                $user ? $user->ho_ten : 'Khách vãng lai (' . $ten . ')',
+                "Đặt hàng thành công. Mã đơn hàng: {$order->ma_don_hang}, tổng thanh toán: " . number_format($tongThanhToan) . "đ",
+                '#3b82f6'
+            );
+
             LichSuTrangThaiDonHang::create([
                 'id_don_hang' => $order->id,
                 'trang_thai' => 'cho_xu_ly',
@@ -357,17 +400,42 @@ class CustomerController extends Controller
                 $activeAccount = \App\Models\TaiKhoanNganHang::where('is_active', true)->first();
                 if ($activeAccount) {
                     // Format: https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.png?amount=<AMOUNT>&addInfo=<DESCRIPTION>&accountName=<ACCOUNT_NAME>
-                    $qrUrl = "https://img.vietqr.io/image/{$activeAccount->bank_id}-{$activeAccount->bank_account_no}-compact2.png" .
+                    $qrUrl = "https://img.vietqr.io/image/{$activeAccount->bank_id}-{$activeAccount->bank_account_no}-compact.png" .
                         "?amount={$tongThanhToan}" .
                         "&addInfo=" . urlencode($order->ma_don_hang) .
                         "&accountName=" . urlencode($activeAccount->bank_account_name);
-                    
+
                     $bankInfo = [
                         'bank_id' => $activeAccount->bank_id,
                         'bank_account_no' => $activeAccount->bank_account_no,
                         'bank_account_name' => $activeAccount->bank_account_name,
                     ];
                 }
+            }
+
+            // Gửi thông báo Realtime qua Pusher khi có đơn hàng mới
+            try {
+                if (class_exists('Pusher\Pusher')) {
+                    $options = [
+                        'cluster' => env('PUSHER_APP_CLUSTER', 'ap1'),
+                        'useTLS' => true
+                    ];
+                    $pusher = new \Pusher\Pusher(
+                        env('PUSHER_APP_KEY', '794a0b225fca675fc9a7'),
+                        env('PUSHER_APP_SECRET', 'cee10ba3a6fe8c8db26f'),
+                        env('PUSHER_APP_ID', '2156596'),
+                        $options
+                    );
+                    $pusher->trigger('my-channel', 'new-order', [
+                        'id' => $order->id,
+                        'ma_don_hang' => $order->ma_don_hang,
+                        'customer' => $ten,
+                        'total' => number_format($tongThanhToan, 0, ',', '.') . ' ₫'
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Bỏ qua lỗi Pusher để không làm gián đoạn đặt hàng
+                \Illuminate\Support\Facades\Log::error('Pusher error in Customer Checkout: ' . $e->getMessage());
             }
 
             return response()->json([

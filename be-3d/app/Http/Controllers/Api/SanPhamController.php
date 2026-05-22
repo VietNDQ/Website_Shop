@@ -20,10 +20,10 @@ class SanPhamController extends Controller
      */
     public function danhSach(Request $request)
     {
-        $danhSach = SanPham::with(['danhMuc', 'hinhAnhs', 'bienThes'])->orderBy('id', 'desc')->get();
+        $danhSach = SanPham::with(['danhMuc', 'hinhAnhs', 'bienThes', 'thuocTinhs'])->orderBy('id', 'desc')->get();
 
         $data = $danhSach->map(function ($sp) {
-            $tongTonKho = $sp->bienThes->sum('so_luong_ton_kho');
+            $tongTonKho = $sp->so_luong_ton_kho !== null ? (int)$sp->so_luong_ton_kho : (int)$sp->bienThes->sum('so_luong_ton_kho');
             $sku = $sp->bienThes->first() ? $sp->bienThes->first()->ma_kho : 'N/A';
             $anhDaiDien = $sp->hinhAnhs->firstWhere('la_anh_dai_dien', true);
             $anhPhu = $sp->hinhAnhs->where('la_anh_dai_dien', false)->values();
@@ -44,7 +44,14 @@ class SanPhamController extends Controller
                 'image'      => $anhDaiDien ? $anhDaiDien->duong_dan_anh : null,
                 'gallery'    => $anhPhu->pluck('duong_dan_anh')->toArray(),
                 'status'     => $statusMap[$sp->tinh_trang] ?? 'active',
-                'bien_the'   => $sp->bienThes
+                'bien_the'   => $sp->bienThes,
+                'thuoc_tinh' => $sp->thuocTinhs->map(function ($tt) {
+                    return [
+                        'id' => $tt->id,
+                        'ten_thuoc_tinh' => $tt->ten_thuoc_tinh,
+                        'gia_tri' => $tt->gia_tri,
+                    ];
+                }),
             ];
         });
 
@@ -63,21 +70,81 @@ class SanPhamController extends Controller
             // Map status string từ FE sang tinyInteger cho DB
             $tinhTrangMap = ['active' => 1, 'out' => 0, 'hidden' => 2];
 
+            $bienTheInput = $request->input('bien_the');
+            if (is_string($bienTheInput)) {
+                $bienTheInput = json_decode($bienTheInput, true);
+            }
+
+            $giaCoBan = $request->gia_co_ban;
+            $soLuongTonKho = $request->so_luong_ton_kho ?: 0;
+            $hasVariants = is_array($bienTheInput) && count($bienTheInput) > 0;
+
+            if ($hasVariants) {
+                // Tự động lấy min('price') của các biến thể
+                $giaCoBan = collect($bienTheInput)->min('price') ?? 0;
+                // Bổ sung tính toán Tổng Tồn Kho ở Backend
+                $soLuongTonKho = collect($bienTheInput)->sum('stock') ?? 0;
+            }
+
             $sanPham = SanPham::create([
                 'ten_san_pham' => $request->ten_san_pham,
-                'gia_co_ban' => $request->gia_co_ban,
+                'gia_co_ban' => $giaCoBan,
                 'gia_goc'    => $request->gia_goc ?: null,
                 'id_danh_muc' => $request->id_danh_muc,
                 'mo_ta' => $request->mo_ta,
                 'tinh_trang' => $tinhTrangMap[$request->tinh_trang] ?? 1,
+                'so_luong_ton_kho' => $soLuongTonKho,
             ]);
 
-            BienTheSanPham::create([
-                'id_san_pham' => $sanPham->id,
-                'ma_kho' => $request->sku,
-                'gia_ban' => $request->gia_co_ban,
-                'so_luong_ton_kho' => $request->so_luong_ton_kho,
-            ]);
+            // Save attributes (thuoc_tinh)
+            $thuocTinhInput = $request->input('thuoc_tinh');
+            if (is_string($thuocTinhInput)) {
+                $thuocTinhInput = json_decode($thuocTinhInput, true);
+            }
+            if (is_array($thuocTinhInput)) {
+                foreach ($thuocTinhInput as $tt) {
+                    if (isset($tt['ten_thuoc_tinh']) && !empty($tt['ten_thuoc_tinh'])) {
+                        \App\Models\ThuocTinh::create([
+                            'id_san_pham' => $sanPham->id,
+                            'ten_thuoc_tinh' => $tt['ten_thuoc_tinh'],
+                            'gia_tri' => $tt['gia_tri'] ?? [],
+                        ]);
+                    }
+                }
+            }
+
+            // Save variants (bien_the)
+            $bienTheImages = $request->file('bien_the_images') ?? [];
+            if ($hasVariants) {
+                foreach ($bienTheInput as $index => $bt) {
+                    // Xử lý upload ảnh biến thể
+                    $imagePath = null;
+                    if (isset($bienTheImages[$index])) {
+                        $file = $bienTheImages[$index];
+                        $path = $file->store('uploads/bien_the', 'public');
+                        $imagePath = '/storage/' . $path;
+                    }
+                    BienTheSanPham::create([
+                        'id_san_pham' => $sanPham->id,
+                        'ma_kho' => isset($bt['sku']) && !empty($bt['sku']) ? $bt['sku'] : ($request->sku ?: 'SKU-' . $sanPham->id . '-' . ($index + 1)),
+                        'gia_ban' => isset($bt['price']) ? $bt['price'] : $giaCoBan,
+                        'gia_goc' => isset($bt['price_orig']) && $bt['price_orig'] > 0 ? $bt['price_orig'] : null,
+                        'so_luong_ton_kho' => isset($bt['stock']) ? $bt['stock'] : 0,
+                        'thuoc_tinh' => isset($bt['thuoc_tinh']) ? $bt['thuoc_tinh'] : [],
+                        'hinh_anh' => $imagePath,
+                    ]);
+                }
+            } else {
+                // Fallback to single variant if no variants array is provided
+                BienTheSanPham::create([
+                    'id_san_pham' => $sanPham->id,
+                    'ma_kho' => $request->sku ?: 'SKU-' . $sanPham->id,
+                    'gia_ban' => $giaCoBan,
+                    'so_luong_ton_kho' => $request->so_luong_ton_kho ?: 0,
+                    'thuoc_tinh' => [],
+                    'hinh_anh' => null,
+                ]);
+            }
 
             // Handle ảnh đại diện
             if ($request->hasFile('hinh_anh')) {
@@ -134,30 +201,116 @@ class SanPhamController extends Controller
         try {
             $tinhTrangMap = ['active' => 1, 'out' => 0, 'hidden' => 2];
 
+            $bienTheInput = $request->input('bien_the');
+            if (is_string($bienTheInput)) {
+                $bienTheInput = json_decode($bienTheInput, true);
+            }
+
+            $giaCoBan = $request->gia_co_ban;
+            $soLuongTonKho = $request->so_luong_ton_kho ?: 0;
+            $hasVariants = is_array($bienTheInput) && count($bienTheInput) > 0;
+
+            if ($hasVariants) {
+                // Tự động lấy min('price') của các biến thể
+                $giaCoBan = collect($bienTheInput)->min('price') ?? 0;
+                // Bổ sung tính toán Tổng Tồn Kho ở Backend
+                $soLuongTonKho = collect($bienTheInput)->sum('stock') ?? 0;
+            }
+
             $sanPham->update([
                 'ten_san_pham' => $request->ten_san_pham,
-                'gia_co_ban' => $request->gia_co_ban,
+                'gia_co_ban' => $giaCoBan,
                 'gia_goc'    => $request->gia_goc ?: null,
                 'id_danh_muc' => $request->id_danh_muc,
                 'mo_ta' => $request->mo_ta,
                 'tinh_trang' => $tinhTrangMap[$request->tinh_trang] ?? $sanPham->tinh_trang,
+                'so_luong_ton_kho' => $soLuongTonKho,
             ]);
 
-            if ($request->filled('sku') || $request->filled('so_luong_ton_kho')) {
-                $bienThe = BienTheSanPham::where('id_san_pham', $sanPham->id)->first();
-                if ($bienThe) {
-                    $bienThe->update([
-                        'ma_kho' => $request->sku ?? $bienThe->ma_kho,
-                        'gia_ban' => $request->gia_co_ban,
-                        'so_luong_ton_kho' => $request->so_luong_ton_kho ?? $bienThe->so_luong_ton_kho,
-                    ]);
-                } else {
+            // Save attributes (thuoc_tinh)
+            $thuocTinhInput = $request->input('thuoc_tinh');
+            if (is_string($thuocTinhInput)) {
+                $thuocTinhInput = json_decode($thuocTinhInput, true);
+            }
+            if (is_array($thuocTinhInput)) {
+                // Delete old attributes first
+                \App\Models\ThuocTinh::where('id_san_pham', $sanPham->id)->delete();
+                foreach ($thuocTinhInput as $tt) {
+                    if (isset($tt['ten_thuoc_tinh']) && !empty($tt['ten_thuoc_tinh'])) {
+                        \App\Models\ThuocTinh::create([
+                            'id_san_pham' => $sanPham->id,
+                            'ten_thuoc_tinh' => $tt['ten_thuoc_tinh'],
+                            'gia_tri' => $tt['gia_tri'] ?? [],
+                        ]);
+                    }
+                }
+            }
+
+            // Save/Sync variants (bien_the)
+            $bienTheImages = $request->file('bien_the_images') ?? [];
+            if ($hasVariants) {
+                $processedVariantIds = [];
+
+                foreach ($bienTheInput as $index => $bt) {
+                    $thuocTinhMap = isset($bt['thuoc_tinh']) ? $bt['thuoc_tinh'] : [];
+                    $id = isset($bt['id']) && !empty($bt['id']) ? $bt['id'] : null;
+
+                    // Xử lý ảnh biến thể: upload mới hoặc giữ ảnh cũ
+                    $imagePath = isset($bt['existing_image']) && !empty($bt['existing_image']) ? $bt['existing_image'] : null;
+                    if (isset($bienTheImages[$index])) {
+                        $file = $bienTheImages[$index];
+                        $path = $file->store('uploads/bien_the', 'public');
+                        $imagePath = '/storage/' . $path;
+                    }
+
+                    $variant = BienTheSanPham::updateOrCreate(
+                        ['id' => $id, 'id_san_pham' => $sanPham->id],
+                        [
+                            'ma_kho' => isset($bt['sku']) && !empty($bt['sku']) ? $bt['sku'] : ($request->sku ?: 'SKU-' . $sanPham->id . '-' . time() . '-' . ($index + 1)),
+                            'gia_ban' => isset($bt['price']) ? $bt['price'] : $giaCoBan,
+                            'gia_goc' => isset($bt['price_orig']) && $bt['price_orig'] > 0 ? $bt['price_orig'] : null,
+                            'so_luong_ton_kho' => isset($bt['stock']) ? $bt['stock'] : 0,
+                            'thuoc_tinh' => $thuocTinhMap,
+                            'hinh_anh' => $imagePath,
+                        ]
+                    );
+                    $processedVariantIds[] = $variant->id;
+                }
+
+                // Delete variants that are no longer present
+                BienTheSanPham::where('id_san_pham', $sanPham->id)->whereNotIn('id', $processedVariantIds)->delete();
+            } else {
+                // Sync to a single simple variant
+                $bienTheCount = BienTheSanPham::where('id_san_pham', $sanPham->id)->count();
+                if ($bienTheCount > 1) {
+                    // Delete all and create one simple variant
+                    BienTheSanPham::where('id_san_pham', $sanPham->id)->delete();
                     BienTheSanPham::create([
                         'id_san_pham' => $sanPham->id,
-                        'ma_kho' => $request->sku ?? 'SKU-'.$sanPham->id,
-                        'gia_ban' => $request->gia_co_ban,
-                        'so_luong_ton_kho' => $request->so_luong_ton_kho ?? 0,
+                        'ma_kho' => $request->sku ?: 'SKU-' . $sanPham->id,
+                        'gia_ban' => $giaCoBan,
+                        'so_luong_ton_kho' => $request->so_luong_ton_kho ?: 0,
+                        'thuoc_tinh' => [],
                     ]);
+                } else {
+                    // Update the single variant
+                    $bienThe = BienTheSanPham::where('id_san_pham', $sanPham->id)->first();
+                    if ($bienThe) {
+                        $bienThe->update([
+                            'ma_kho' => $request->sku ?: $bienThe->ma_kho,
+                            'gia_ban' => $giaCoBan,
+                            'so_luong_ton_kho' => $request->so_luong_ton_kho ?: $bienThe->so_luong_ton_kho,
+                            'thuoc_tinh' => [],
+                        ]);
+                    } else {
+                        BienTheSanPham::create([
+                            'id_san_pham' => $sanPham->id,
+                            'ma_kho' => $request->sku ?: 'SKU-' . $sanPham->id,
+                            'gia_ban' => $giaCoBan,
+                            'so_luong_ton_kho' => $request->so_luong_ton_kho ?: 0,
+                            'thuoc_tinh' => [],
+                        ]);
+                    }
                 }
             }
 

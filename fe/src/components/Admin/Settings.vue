@@ -338,14 +338,14 @@ export default {
         },
       ],
       store: {
-        ten_thuong_hieu: "Mô Hình BALAB",
+        ten_thuong_hieu: "Cửa Hàng BALAB",
         hotline: "1800 2097",
         email_ho_tro: "support@BALAB.vn",
         website: "https://BALAB.vn",
         dia_chi_kho: "123 Nguyễn Văn Linh, Q.7, TP.HCM",
         mo_ta: "Chuyên phân phối mô hình chính hãng, chất lượng cao.",
-        facebook: "https://facebook.com/mohinhBALAB",
-        instagram: "https://instagram.com/mohinhBALAB",
+        facebook: "https://facebook.com/ShopBALAB",
+        instagram: "https://instagram.com/ShopBALAB",
       },
       bankAccounts: [],
       showAddForm: false,
@@ -452,7 +452,7 @@ export default {
     async fetchStoreInfo() {
       try {
         const res = await axios.get(
-          "http://127.0.0.1:8000/api/thong-tin-cua-hang",
+          "/api/thong-tin-cua-hang",
         );
         if (res.data) {
           this.store = {
@@ -473,7 +473,7 @@ export default {
     async fetchBankAccounts() {
       try {
         const res = await axios.get(
-          "http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang",
+          "/api/quan-ly/tai-khoan-ngan-hang",
           this.getConfig()
         );
         this.bankAccounts = res.data;
@@ -488,7 +488,7 @@ export default {
       }
       try {
         const res = await axios.post(
-          "http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang",
+          "/api/quan-ly/tai-khoan-ngan-hang",
           this.newAccount,
           this.getConfig()
         );
@@ -504,7 +504,7 @@ export default {
     async activateBankAccount(id) {
       try {
         const res = await axios.post(
-          `http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang/${id}/kich-hoat`,
+          `/api/quan-ly/tai-khoan-ngan-hang/${id}/kich-hoat`,
           {},
           this.getConfig()
         );
@@ -521,7 +521,7 @@ export default {
       }
       try {
         const res = await axios.delete(
-          `http://127.0.0.1:8000/api/quan-ly/tai-khoan-ngan-hang/${id}`,
+          `/api/quan-ly/tai-khoan-ngan-hang/${id}`,
           this.getConfig()
         );
         this.showToast(res.data.message || "Xóa tài khoản thành công!", "success");
@@ -542,7 +542,7 @@ export default {
       }
       try {
         const res = await axios.post(
-          "http://127.0.0.1:8000/api/thong-tin-cua-hang",
+          "/api/thong-tin-cua-hang",
           this.store,
           this.getConfig(),
         );
@@ -580,5 +580,5 @@ export default {
 </script>
 
 <style scoped>
-@import "/style_admin/settings.css";
+@import "../../../public/style_admin/settings.css";
 </style>

@@ -289,7 +289,7 @@ export default {
             Authorization: 'Bearer ' + localStorage.getItem('token_admin')
           }
         };
-        const res = await axios.get('http://127.0.0.1:8000/api/quan-ly/danh-muc/data', config);
+        const res = await axios.get('/api/quan-ly/danh-muc/data', config);
         if (res.data.status) {
           this.categories = res.data.data;
         }
@@ -336,7 +336,7 @@ export default {
         };
 
         if (this.modalMode === "add") {
-          const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/danh-muc/create', payload, config);
+          const res = await axios.post('/api/quan-ly/danh-muc/create', payload, config);
           if (res.data.status) {
             this.showToast(`Đã thêm danh mục "${this.form.name}" thành công!`);
             this.fetchCategories();
@@ -346,7 +346,7 @@ export default {
           }
         } else {
           payload.id = this.form.id;
-          const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/danh-muc/update', payload, config);
+          const res = await axios.post('/api/quan-ly/danh-muc/update', payload, config);
           if (res.data.status) {
             this.showToast(`Cập nhật danh mục "${this.form.name}" thành công!`, "info");
             this.fetchCategories();
@@ -394,7 +394,7 @@ export default {
                 Authorization: 'Bearer ' + localStorage.getItem('token_admin')
               }
             };
-            const res = await axios.post('http://127.0.0.1:8000/api/quan-ly/danh-muc/delete', { id: category.id }, config);
+            const res = await axios.post('/api/quan-ly/danh-muc/delete', { id: category.id }, config);
             if (res.data.status) {
               this.showToast("Xóa danh mục thành công!", "danger");
               this.fetchCategories();
@@ -422,5 +422,5 @@ export default {
 </script>
 
 <style scoped>
-@import "/style_admin/categories.css";
+@import "../../../public/style_admin/categories.css";
 </style>

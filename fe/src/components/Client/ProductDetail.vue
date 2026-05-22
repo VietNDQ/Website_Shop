@@ -33,15 +33,59 @@
             <img :src="mainImageUrl" :alt="product.ten_san_pham" class="pd-main-img-el" />
             <div class="pd-zoom-hint">🔍 Hình ảnh thực tế từ sản phẩm</div>
           </div>
-          <div class="pd-thumbs" v-if="product.hinh_anhs && product.hinh_anhs.length > 1">
-            <div
-              v-for="(img, i) in product.hinh_anhs"
-              :key="img.id"
-              class="pd-thumb-el"
-              :class="{ active: activeImg === i }"
-              @click="activeImg = i"
-            >
-              <img :src="getProductImageUrl(img.duong_dan_anh)" class="pd-thumb-img" />
+          
+          <div class="pd-thumbs" v-if="allImages && allImages.length > 1">
+            <!-- Grid layout when <= 4 images -->
+            <div v-if="allImages.length <= 4" class="pd-thumbs-grid">
+              <div
+                v-for="(img, i) in allImages"
+                :key="img.id"
+                class="pd-thumb-el"
+                :class="{ active: isThumbActive(img, i) }"
+                @click="selectThumbnail(i)"
+              >
+                <img :src="getProductImageUrl(img.duong_dan_anh)" class="pd-thumb-img" />
+              </div>
+            </div>
+
+            <!-- Slider layout when > 4 images -->
+            <div v-else class="pd-thumbs-slider-wrapper">
+              <button 
+                type="button"
+                class="pd-thumbs-btn pd-thumbs-btn-prev" 
+                :class="{ hidden: !canScrollPrev }"
+                @click="scrollThumbs('prev')"
+              >
+                ‹
+              </button>
+              
+              <div 
+                ref="thumbViewport" 
+                class="pd-thumbs-viewport"
+                @scroll="checkScroll"
+              >
+                <div class="pd-thumbs-track">
+                  <div
+                    v-for="(img, i) in allImages"
+                    :key="img.id"
+                    ref="thumbItems"
+                    class="pd-thumb-el"
+                    :class="{ active: isThumbActive(img, i) }"
+                    @click="selectThumbnail(i)"
+                  >
+                    <img :src="getProductImageUrl(img.duong_dan_anh)" class="pd-thumb-img" />
+                  </div>
+                </div>
+              </div>
+              
+              <button 
+                type="button"
+                class="pd-thumbs-btn pd-thumbs-btn-next" 
+                :class="{ hidden: !canScrollNext }"
+                @click="scrollThumbs('next')"
+              >
+                ›
+              </button>
             </div>
           </div>
         </div>
@@ -63,10 +107,10 @@
           <!-- Price -->
           <div class="pd-price-box">
             <span class="pd-price">{{ formatPrice(displayPrice) }}</span>
-            <template v-if="product.gia_goc && product.gia_goc > 0">
-              <span class="pd-price-orig">{{ formatPrice(product.gia_goc) }}</span>
-              <span class="pd-price-badge" v-if="product.gia_goc > displayPrice">
-                -{{ Math.round((1 - displayPrice / product.gia_goc) * 100) }}%
+            <template v-if="displayPriceOrig && displayPriceOrig > displayPrice">
+              <span class="pd-price-orig">{{ formatPrice(displayPriceOrig) }}</span>
+              <span class="pd-price-badge">
+                -{{ Math.round((1 - displayPrice / displayPriceOrig) * 100) }}%
               </span>
             </template>
           </div>
@@ -76,34 +120,18 @@
             <p>{{ product.mo_ta }}</p>
           </div>
 
-          <!-- Variant Selector (Color) -->
-          <div class="pd-option-group" v-if="availableColors.length > 0">
-            <div class="pd-option-label">Màu sắc: <strong>{{ selectedColor }}</strong></div>
+          <!-- Dynamic Variant Selectors (tự động theo thuộc tính trong DB) -->
+          <div class="pd-option-group" v-for="group in attributeGroups" :key="group.key">
+            <div class="pd-option-label">{{ group.label }}: <strong>{{ selectedAttributes[group.key] }}</strong></div>
             <div class="pd-colors">
               <button
-                v-for="color in availableColors"
-                :key="color"
+                v-for="value in group.values"
+                :key="value"
                 class="pd-color-btn"
-                :class="{ active: selectedColor === color }"
-                @click="selectColor(color)"
+                :class="{ active: selectedAttributes[group.key] === value }"
+                @click="selectAttribute(group.key, value)"
               >
-                {{ color }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Variant Selector (Size) -->
-          <div class="pd-option-group" v-if="availableSizes.length > 0">
-            <div class="pd-option-label">Kích thước / Loại: <strong>{{ selectedSize }}</strong></div>
-            <div class="pd-sizes">
-              <button
-                v-for="size in availableSizes"
-                :key="size"
-                class="pd-size-btn"
-                :class="{ active: selectedSize === size }"
-                @click="selectedSize = size"
-              >
-                {{ size }}
+                {{ value }}
               </button>
             </div>
           </div>
@@ -130,7 +158,7 @@
             <button class="pd-btn-buy" :disabled="displayStock <= 0" @click="buyNow">
               ⚡ Mua ngay
             </button>
-            <button class="pd-btn-wish" :class="{ wished: isWished }" @click="isWished = !isWished" title="Yêu thích">
+            <button class="pd-btn-wish" :class="{ wished: isWished }" @click="toggleWish" title="Yêu thích">
               {{ isWished ? '❤️' : '🤍' }}
             </button>
           </div>
@@ -148,7 +176,7 @@
       <div class="pd-container pd-tabs-section">
         <div class="pd-tabs">
           <button
-            v-for="tab in tabs"
+            v-for="tab in renderedTabs"
             :key="tab.key"
             class="pd-tab"
             :class="{ active: activeTab === tab.key }"
@@ -158,7 +186,7 @@
 
         <!-- Description -->
         <div v-if="activeTab === 'desc'" class="pd-tab-content">
-          <p style="white-space: pre-line;">{{ product.mo_ta }}</p>
+          <div v-safe-html="product.mo_ta" style="white-space: pre-line;"></div>
         </div>
 
         <!-- Specs table -->
@@ -191,28 +219,147 @@
 
         <!-- Reviews -->
         <div v-if="activeTab === 'reviews'" class="pd-tab-content">
-          <div class="pd-review-summary">
-            <div class="pd-rs-score">4.9<span>/5</span></div>
-            <div>
-              <div class="pd-stars lg">
-                <span v-for="s in 5" :key="s" class="star-on">★</span>
-              </div>
-              <div class="pd-rs-label">3 đánh giá thực tế từ người mua</div>
-            </div>
+          <div v-if="reviewsLoading" class="pd-reviews-loading" style="text-align: center; padding: 40px 0; color: #64748b;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 8px;"></i>
+            <p>Đang tải đánh giá...</p>
           </div>
-          <div class="pd-review-list">
-            <div v-for="rv in reviews" :key="rv.id" class="pd-review-card">
-              <div class="pd-rv-header">
-                <div class="pd-rv-avatar">{{ rv.name[0] }}</div>
-                <div>
-                  <div class="pd-rv-name">{{ rv.name }}</div>
-                  <div class="pd-stars sm">
-                    <span v-for="s in 5" :key="s" :class="s <= rv.rating ? 'star-on' : 'star-off'">★</span>
+          
+          <div v-else>
+            <!-- Review Summary Dashboard -->
+            <div class="pd-review-summary-container" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+              <!-- Score breakdown -->
+              <div class="pd-review-summary-left" style="display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #f1f5f9; padding-right: 24px;">
+                <div class="pd-rs-score" style="font-size: 54px; font-weight: 800; color: #0f172a;">
+                  {{ reviewSummary?.average || 0 }}<span style="font-size: 20px; color: #94a3b8;">/5</span>
+                </div>
+                <div class="pd-stars lg" style="color: #eab308; font-size: 20px; margin: 8px 0;">
+                  <span v-for="s in 5" :key="s" :style="{ color: s <= Math.round(reviewSummary?.average || 0) ? '#eab308' : '#cbd5e1' }">★</span>
+                </div>
+                <div class="pd-rs-label" style="font-size: 13px; color: #64748b; font-weight: 500;">
+                  {{ reviewSummary?.total || 0 }} đánh giá thực tế
+                </div>
+              </div>
+              
+              <!-- Percentages breakdown -->
+              <div class="pd-review-summary-right" style="display: flex; flex-direction: column; gap: 8px; justify-content: center;">
+                <div v-for="star in [5, 4, 3, 2, 1]" :key="star" style="display: flex; align-items: center; gap: 12px; font-size: 13px;">
+                  <span style="width: 40px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 2px;">{{ star }} ★</span>
+                  <div style="flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden;">
+                    <div :style="{ width: getStarPercentage(star) + '%', background: '#eab308', height: '100%', borderRadius: '4px' }"></div>
+                  </div>
+                  <span style="width: 45px; text-align: right; color: #64748b; font-weight: 500;">{{ getStarCount(star) }} ({{ getStarPercentage(star) }}%)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filter Chips -->
+            <div class="pd-review-filters" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
+              <button 
+                type="button"
+                class="pd-filter-chip" 
+                :class="{ active: activeReviewFilter === 'all' }"
+                @click="applyReviewFilter('all')"
+              >
+                Tất cả
+              </button>
+              <button 
+                v-for="star in [5, 4, 3, 2, 1]" 
+                :key="star"
+                type="button"
+                class="pd-filter-chip"
+                :class="{ active: activeReviewFilter === String(star) }"
+                @click="applyReviewFilter(String(star))"
+              >
+                {{ star }} Sao ({{ reviewSummary?.stars[star] || 0 }})
+              </button>
+              <button 
+                type="button"
+                class="pd-filter-chip"
+                :class="{ active: activeReviewFilter === 'images' }"
+                @click="applyReviewFilter('images')"
+              >
+                Có hình ảnh ({{ reviewSummary?.count_with_images || 0 }})
+              </button>
+              <button 
+                type="button"
+                class="pd-filter-chip"
+                :class="{ active: activeReviewFilter === 'comments' }"
+                @click="applyReviewFilter('comments')"
+              >
+                Có bình luận ({{ reviewSummary?.count_with_comments || 0 }})
+              </button>
+            </div>
+
+            <!-- Reviews List -->
+            <div v-if="reviews.length === 0" style="text-align: center; padding: 40px; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0; color: #64748b;">
+              Không tìm thấy đánh giá nào phù hợp với bộ lọc.
+            </div>
+            
+            <div v-else class="pd-review-list">
+              <div v-for="rv in reviews" :key="rv.id" class="pd-review-card">
+                <div class="pd-rv-header">
+                  <div class="pd-rv-avatar" :style="{ background: getRandomAvatarBg(rv.name) }">{{ rv.name[0] }}</div>
+                  <div>
+                    <div class="pd-rv-name" style="font-weight: 700; color: #0f172a;">{{ rv.name }}</div>
+                    <div class="pd-stars sm" style="color: #eab308; font-size: 13px; margin-top: 2px;">
+                      <span v-for="s in 5" :key="s" :style="{ color: s <= rv.rating ? '#eab308' : '#cbd5e1' }">★</span>
+                    </div>
+                  </div>
+                  <div class="pd-rv-date">{{ rv.date }}</div>
+                </div>
+                
+                <!-- Variant bought info -->
+                <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; font-weight: 500;">
+                  <i class="fa-solid fa-circle-check" style="color: #10b981; margin-right: 4px;"></i> Phân loại hàng: <span style="color: #475569;">{{ rv.variant }}</span>
+                </div>
+                
+                <!-- Content text -->
+                <p class="pd-rv-body" v-safe-html="rv.body || 'Khách hàng không để lại bình luận.'" style="white-space: pre-line; margin-bottom: 12px;"></p>
+                
+                <!-- Images Grid -->
+                <div v-if="rv.images && rv.images.length > 0" class="pd-rv-images-grid" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                  <div 
+                    v-for="(img, idx) in rv.images" 
+                    :key="idx" 
+                    class="pd-rv-image-item" 
+                    style="width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer;"
+                    @click="openLightbox(img)"
+                  >
+                    <img :src="img" style="width: 100%; height: 100%; object-fit: cover;" />
                   </div>
                 </div>
-                <div class="pd-rv-date">{{ rv.date }}</div>
+
+                <!-- Admin Response -->
+                <div v-if="rv.reply" class="pd-rv-admin-reply" style="background: rgba(219, 39, 119, 0.03); border-left: 3px solid #db2777; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 12px;">
+                  <div style="font-weight: 700; font-size: 13px; color: #db2777; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-store"></i> Phản hồi của Cửa hàng
+                  </div>
+                  <p style="font-size: 13.5px; color: #475569; margin: 0; line-height: 1.5;" v-safe-html="rv.reply"></p>
+                </div>
               </div>
-              <p class="pd-rv-body">{{ rv.body }}</p>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div v-if="reviewsPagination.last_page > 1" class="pagination-container" style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 24px;">
+              <button 
+                type="button"
+                class="btn-page" 
+                :disabled="reviewsPagination.current_page === 1"
+                @click="fetchReviews(reviewsPagination.current_page - 1)"
+                style="padding: 6px 12px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;"
+              >
+                ‹ Trước
+              </button>
+              <span class="page-info" style="font-size: 13px; color: #64748b; font-weight: 500;">Trang {{ reviewsPagination.current_page }} / {{ reviewsPagination.last_page }}</span>
+              <button 
+                type="button"
+                class="btn-page" 
+                :disabled="reviewsPagination.current_page === reviewsPagination.last_page"
+                @click="fetchReviews(reviewsPagination.current_page + 1)"
+                style="padding: 6px 12px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;"
+              >
+                Sau ›
+              </button>
             </div>
           </div>
         </div>
@@ -222,7 +369,7 @@
       <div class="pd-container pd-related" v-if="related.length > 0">
         <h2 class="pd-section-title">Sản phẩm tương tự</h2>
         <div class="pd-related-grid">
-          <div v-for="rp in related" :key="rp.id" class="pd-related-card" @click="$router.push(`/product/${rp.id}`)">
+          <div v-for="rp in related" :key="rp.id" class="pd-related-card" @click="goToProductDetail(rp)">
             <div class="pd-rc-img-wrap">
               <img :src="getProductImageUrl(rp.hinh_anhs && rp.hinh_anhs.length > 0 ? rp.hinh_anhs[0].duong_dan_anh : '')" class="pd-rc-img-el" />
             </div>
@@ -235,12 +382,20 @@
         </div>
       </div>
     </div>
+    
+    <!-- LIGHTBOX MODAL FOR REVIEW IMAGES -->
+    <div v-if="activeLightboxImg" class="lightbox-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 99999;" @click="activeLightboxImg = null">
+      <button type="button" class="btn-close-lightbox" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">✕</button>
+      <img :src="activeLightboxImg" style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);" @click.stop />
+    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
 import { useCartStore } from "../../store/cartStore";
+import { useWishlistStore } from "../../store/wishlistStore";
+import { slugify, getProductDetailUrl } from "../../router/utils";
 
 export default {
   name: "ProductDetail",
@@ -249,40 +404,21 @@ export default {
       product: null,
       loading: true,
       activeImg: 0,
-      selectedColor: "",
-      selectedSize: "",
+      showVariantImage: true,
+      selectedAttributes: {}, // { mau: 'Set Doreamon', kich_thuoc: 'S', ... } - tự động theo thuộc tính
       qty: 1,
       isWished: false,
       activeTab: "desc",
-      tabs: [
-        { key: "desc", label: "Mô tả sản phẩm" },
-        { key: "specs", label: "Thông số kỹ thuật" },
-        { key: "reviews", label: "Đánh giá (3)" },
-      ],
-      reviews: [
-        {
-          id: 1,
-          name: "Nguyễn Minh Khoa",
-          rating: 5,
-          date: "12/05/2026",
-          body: "Sản phẩm cực kỳ chất lượng, chi tiết rất sắc nét, đóng gói cẩn thận. Giao hàng nhanh, sẽ ủng hộ tiếp!",
-        },
-        {
-          id: 2,
-          name: "Trần Thu Hà",
-          rating: 4,
-          date: "03/04/2026",
-          body: "Mô hình đẹp hơn mong đợi, màu ngoài thực tế rất sáng và sắc nét. Nói chung rất ổn.",
-        },
-        {
-          id: 3,
-          name: "Lê Văn Bình",
-          rating: 5,
-          date: "20/03/2026",
-          body: "Mua làm quà sinh nhật cho bạn, bạn mình khen mãi. Rất đáng tiền!",
-        },
-      ],
+      reviews: [],
+      reviewSummary: null,
+      reviewsLoading: false,
+      reviewsPagination: { current_page: 1, last_page: 1 },
+      reviewFilters: { sao: null, co_anh: 0, co_binh_luan: 0 },
+      activeReviewFilter: 'all',
+      activeLightboxImg: null,
       related: [],
+      canScrollPrev: false,
+      canScrollNext: false,
     };
   },
   mounted() {
@@ -292,41 +428,67 @@ export default {
     "$route.params.id": function () {
       this.loadProduct();
     },
+    "$route.query.variant_id": function (newVal) {
+      this.syncVariantFromUrl(newVal);
+    },
+    allImages() {
+      this.$nextTick(() => {
+        this.checkScroll();
+      });
+    },
+    activeThumbIndex(newVal) {
+      this.scrollActiveThumbIntoView(newVal);
+    },
+    currentVariant(newVariant) {
+      this.updateUrlQuery(newVariant);
+    },
   },
   computed: {
-    availableColors() {
-      if (!this.product || !this.product.bien_thes) return [];
-      const colors = this.product.bien_thes
-        .map((v) => v.thuoc_tinh && v.thuoc_tinh.color)
-        .filter(Boolean);
-      return [...new Set(colors)];
+    renderedTabs() {
+      const count = this.reviewSummary?.total ?? 0;
+      return [
+        { key: "desc", label: "Mô tả sản phẩm" },
+        { key: "specs", label: "Thông số kỹ thuật" },
+        { key: "reviews", label: `Đánh giá (${count})` },
+      ];
     },
-    availableSizes() {
-      if (!this.product || !this.product.bien_thes) return [];
-      const sizes = this.product.bien_thes
-        .filter((v) => !this.selectedColor || (v.thuoc_tinh && v.thuoc_tinh.color === this.selectedColor))
-        .map((v) => v.thuoc_tinh && v.thuoc_tinh.size)
-        .filter(Boolean);
-      return [...new Set(sizes)];
+    // Trả về tất cả nhóm thuộc tính từ biến thể (hoàn toàn động, không hardcode tên key)
+    attributeGroups() {
+      if (!this.product || !this.product.bien_thes || this.product.bien_thes.length === 0) return [];
+      const groupsMap = new Map();
+      this.product.bien_thes.forEach(v => {
+        if (!v.thuoc_tinh) return;
+        const tt = typeof v.thuoc_tinh === 'string' ? JSON.parse(v.thuoc_tinh) : v.thuoc_tinh;
+        if (!tt) return;
+        Object.entries(tt).forEach(([key, val]) => {
+          if (!groupsMap.has(key)) groupsMap.set(key, { values: [], label: this.prettifyKey(key) });
+          const group = groupsMap.get(key);
+          if (!group.values.includes(val)) group.values.push(val);
+        });
+      });
+      return Array.from(groupsMap.entries()).map(([key, { values, label }]) => ({ key, label, values }));
     },
     currentVariant() {
       if (!this.product || !this.product.bien_thes || this.product.bien_thes.length === 0) return null;
-      // Tìm biến thể khớp với cả màu và size đã chọn
-      const found = this.product.bien_thes.find(
-        (v) =>
-          v.thuoc_tinh &&
-          v.thuoc_tinh.color === this.selectedColor &&
-          v.thuoc_tinh.size === this.selectedSize
-      );
+      // Nếu không có thuộc tính nào được chọn, trả biến thể đầu tiên
+      if (Object.keys(this.selectedAttributes).length === 0) return this.product.bien_thes[0];
+      // Tìm biến thể khớp tất cả thuộc tính đã chọn
+      const found = this.product.bien_thes.find(v => {
+        if (!v.thuoc_tinh) return false;
+        const tt = typeof v.thuoc_tinh === 'string' ? JSON.parse(v.thuoc_tinh) : v.thuoc_tinh;
+        if (!tt) return false;
+        return Object.entries(this.selectedAttributes).every(([key, val]) => tt[key] === val);
+      });
+      // Fallback: tìm biến thể khớp một phần
       if (found) return found;
-
-      // Nếu không khớp hoàn toàn, thử tìm cái khớp màu trước
-      const colorMatch = this.product.bien_thes.find(
-        (v) => v.thuoc_tinh && v.thuoc_tinh.color === this.selectedColor
-      );
-      if (colorMatch) return colorMatch;
-
-      return this.product.bien_thes[0];
+      const firstKey = Object.keys(this.selectedAttributes)[0];
+      const firstVal = this.selectedAttributes[firstKey];
+      const partial = this.product.bien_thes.find(v => {
+        if (!v.thuoc_tinh) return false;
+        const tt = typeof v.thuoc_tinh === 'string' ? JSON.parse(v.thuoc_tinh) : v.thuoc_tinh;
+        return tt && tt[firstKey] === firstVal;
+      });
+      return partial || this.product.bien_thes[0];
     },
     displayPrice() {
       if (this.currentVariant) {
@@ -334,18 +496,70 @@ export default {
       }
       return this.product ? this.product.gia_co_ban : 0;
     },
+    displayPriceOrig() {
+      // Ưu tiên gia_goc của biến thể đang chọn, fallback về gia_goc sản phẩm gốc
+      if (this.currentVariant && this.currentVariant.gia_goc && this.currentVariant.gia_goc > 0) {
+        return this.currentVariant.gia_goc;
+      }
+      return this.product && this.product.gia_goc ? this.product.gia_goc : null;
+    },
     displayStock() {
       if (this.currentVariant) {
         return this.currentVariant.so_luong_ton_kho;
       }
       return this.product ? 0 : 0;
     },
+    allImages() {
+      if (!this.product) return [];
+      const list = [];
+      
+      // 1. Thêm ảnh từ album chung của sản phẩm
+      if (this.product.hinh_anhs && this.product.hinh_anhs.length > 0) {
+        this.product.hinh_anhs.forEach(img => {
+          list.push({
+            id: `general-${img.id}`,
+            duong_dan_anh: img.duong_dan_anh,
+            isVariant: false
+          });
+        });
+      }
+      
+      // 2. Thêm ảnh từ các biến thể (nếu có ảnh và chưa trùng đường dẫn)
+      if (this.product.bien_thes && this.product.bien_thes.length > 0) {
+        this.product.bien_thes.forEach(vt => {
+          if (vt.hinh_anh) {
+            const exists = list.some(item => item.duong_dan_anh === vt.hinh_anh);
+            if (!exists) {
+              list.push({
+                id: `variant-${vt.id}`,
+                duong_dan_anh: vt.hinh_anh,
+                isVariant: true,
+                variant: vt
+              });
+            }
+          }
+        });
+      }
+      
+      return list;
+    },
     mainImageUrl() {
-      if (this.product && this.product.hinh_anhs && this.product.hinh_anhs.length > 0) {
-        const imgObj = this.product.hinh_anhs[this.activeImg] || this.product.hinh_anhs[0];
+      if (this.showVariantImage && this.currentVariant && this.currentVariant.hinh_anh) {
+        return this.getProductImageUrl(this.currentVariant.hinh_anh);
+      }
+      // Fallback về danh sách ảnh chung + biến thể
+      if (this.allImages && this.allImages.length > 0) {
+        const imgObj = this.allImages[this.activeImg] || this.allImages[0];
         return this.getProductImageUrl(imgObj.duong_dan_anh);
       }
       return "https://via.placeholder.com/500?text=No+Image";
+    },
+    activeThumbIndex() {
+      if (this.showVariantImage && this.currentVariant && this.currentVariant.hinh_anh) {
+        const idx = this.allImages.findIndex(img => img.duong_dan_anh === this.currentVariant.hinh_anh);
+        if (idx !== -1) return idx;
+      }
+      return this.activeImg;
     },
   },
   methods: {
@@ -355,33 +569,170 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       const id = this.$route.params.id;
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/api/san-pham/${id}`);
+        const response = await axios.get(`/api/san-pham/${id}`);
         const prod = response.data;
         this.product = prod;
 
-        // Cài đặt mặc định cho các biến thể
-        if (prod.bien_thes && prod.bien_thes.length > 0) {
-          const firstVariant = prod.bien_thes[0];
-          this.selectedColor = (firstVariant.thuoc_tinh && firstVariant.thuoc_tinh.color) || "";
-          this.selectedSize = (firstVariant.thuoc_tinh && firstVariant.thuoc_tinh.size) || "";
+        // Redirect to canonical SEO URL path if it does not match
+        const correctSlug = slugify(prod.ten_san_pham || "san-pham");
+        const correctPath = `/${correctSlug}-i.${prod.id}`;
+        if (this.$route.path !== correctPath) {
+          this.$router.replace({
+            path: correctPath,
+            query: this.$route.query
+          }).catch(err => {
+            if (err.name !== 'NavigationDuplicated') console.error(err);
+          });
+        }
+
+        // Restore state from URL query parameter ?variant_id=...
+        const urlVariantId = this.$route.query.variant_id;
+        let matchedVariant = null;
+        if (urlVariantId && prod.bien_thes && prod.bien_thes.length > 0) {
+          matchedVariant = prod.bien_thes.find(v => String(v.id) === String(urlVariantId));
+        }
+
+        if (matchedVariant) {
+          const tt = typeof matchedVariant.thuoc_tinh === 'string' ? JSON.parse(matchedVariant.thuoc_tinh) : matchedVariant.thuoc_tinh;
+          this.selectedAttributes = tt ? { ...tt } : {};
         } else {
-          this.selectedColor = "";
-          this.selectedSize = "";
+          // If URL param is invalid or empty, default to first variant
+          if (prod.bien_thes && prod.bien_thes.length > 0) {
+            const firstTt = prod.bien_thes[0].thuoc_tinh;
+            const tt = typeof firstTt === 'string' ? JSON.parse(firstTt) : firstTt;
+            this.selectedAttributes = tt ? { ...tt } : {};
+            
+            // Lặng lẽ update URL to default variant ID
+            this.$nextTick(() => {
+              this.updateUrlQuery(prod.bien_thes[0]);
+            });
+          } else {
+            this.selectedAttributes = {};
+            this.$nextTick(() => {
+              this.updateUrlQuery(null);
+            });
+          }
         }
 
         this.activeImg = 0;
+        this.showVariantImage = true;
 
         // Tải sản phẩm tương tự
         this.loadRelatedProducts(prod.id_danh_muc, prod.id);
+
+        // Tải đánh giá sản phẩm
+        this.resetReviewFilters();
+        this.fetchReviews(1);
+
+        // Khởi tạo trạng thái yêu thích & Thêm vào đã xem gần đây
+        const wishlistStore = useWishlistStore();
+        this.isWished = wishlistStore.isWished(prod.id);
+        wishlistStore.addRecentlyViewed(prod);
       } catch (error) {
         console.error("Lỗi khi tải chi tiết sản phẩm:", error);
       } finally {
         this.loading = false;
+        this.$nextTick(() => {
+          this.checkScroll();
+          this.scrollActiveThumbIntoView(this.activeThumbIndex);
+        });
       }
+    },
+    async toggleWish() {
+      if (!this.product) return;
+      const wishlistStore = useWishlistStore();
+      const res = await wishlistStore.toggleWishlist(this.product);
+      this.isWished = res;
+      if (this.$toast) {
+        if (res) {
+          this.$toast.success("Đã thêm vào danh sách yêu thích!");
+        } else {
+          this.$toast.info("Đã xóa khỏi danh sách yêu thích.");
+        }
+      }
+    },
+    updateUrlQuery(variant) {
+      if (variant && variant.id) {
+        if (this.$route.query.variant_id !== String(variant.id)) {
+          this.$router.replace({
+            path: this.$route.path,
+            query: { ...this.$route.query, variant_id: variant.id }
+          }).catch(err => {
+            if (err.name !== 'NavigationDuplicated') console.error(err);
+          });
+        }
+      } else {
+        if (this.$route.query.variant_id) {
+          const newQuery = { ...this.$route.query };
+          delete newQuery.variant_id;
+          this.$router.replace({ path: this.$route.path, query: newQuery }).catch(() => {});
+        }
+      }
+    },
+    syncVariantFromUrl(urlVariantId) {
+      if (!this.product || !this.product.bien_thes || this.product.bien_thes.length === 0) return;
+      
+      let matchedVariant = null;
+      if (urlVariantId) {
+        matchedVariant = this.product.bien_thes.find(v => String(v.id) === String(urlVariantId));
+      }
+
+      if (matchedVariant) {
+        const tt = typeof matchedVariant.thuoc_tinh === 'string' ? JSON.parse(matchedVariant.thuoc_tinh) : matchedVariant.thuoc_tinh;
+        if (JSON.stringify(this.selectedAttributes) !== JSON.stringify(tt)) {
+          this.selectedAttributes = tt ? { ...tt } : {};
+        }
+      } else {
+        // Fallback to first variant if URL parameter is invalid
+        const firstVariant = this.product.bien_thes[0];
+        const tt = typeof firstVariant.thuoc_tinh === 'string' ? JSON.parse(firstVariant.thuoc_tinh) : firstVariant.thuoc_tinh;
+        if (JSON.stringify(this.selectedAttributes) !== JSON.stringify(tt)) {
+          this.selectedAttributes = tt ? { ...tt } : {};
+        }
+        this.updateUrlQuery(firstVariant);
+      }
+    },
+    checkScroll() {
+      const el = this.$refs.thumbViewport;
+      if (el) {
+        this.canScrollPrev = el.scrollLeft > 5;
+        this.canScrollNext = el.scrollLeft + el.clientWidth < el.scrollWidth - 5;
+      }
+    },
+    scrollThumbs(direction) {
+      const el = this.$refs.thumbViewport;
+      if (!el) return;
+      const scrollAmount = 120; // width of thumbnail (110px) + gap (10px)
+      if (direction === 'prev') {
+        el.scrollBy({ left: -scrollAmount * 2, behavior: 'smooth' });
+      } else {
+        el.scrollBy({ left: scrollAmount * 2, behavior: 'smooth' });
+      }
+    },
+    scrollActiveThumbIntoView(idx) {
+      this.$nextTick(() => {
+        const el = this.$refs.thumbViewport;
+        const items = this.$refs.thumbItems;
+        if (el && items && items[idx]) {
+          const item = items[idx];
+          const containerWidth = el.clientWidth;
+          const itemLeft = item.offsetLeft;
+          const itemWidth = item.clientWidth;
+          
+          if (itemLeft < el.scrollLeft) {
+            el.scrollTo({ left: itemLeft, behavior: 'smooth' });
+          } else if (itemLeft + itemWidth > el.scrollLeft + containerWidth) {
+            el.scrollTo({ left: itemLeft + itemWidth - containerWidth, behavior: 'smooth' });
+          }
+        }
+      });
+    },
+    goToProductDetail(product) {
+      this.$router.push(getProductDetailUrl(product));
     },
     async loadRelatedProducts(categoryId, currentProductId) {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/san-pham", {
+        const response = await axios.get("/api/san-pham", {
           params: { id_danh_muc: categoryId },
         });
         const list = response.data.data || [];
@@ -390,25 +741,47 @@ export default {
         console.error("Lỗi khi tải sản phẩm tương tự:", error);
       }
     },
-    selectColor(color) {
-      this.selectedColor = color;
-      // Tìm các kích cỡ có sẵn cho màu sắc mới này
-      if (this.product && this.product.bien_thes) {
-        const sizes = this.product.bien_thes
-          .filter((v) => v.thuoc_tinh && v.thuoc_tinh.color === color)
-          .map((v) => v.thuoc_tinh && v.thuoc_tinh.size)
-          .filter(Boolean);
-        if (sizes.length > 0) {
-          this.selectedSize = sizes[0];
+    // Chọn giá trị thuộc tính (tự động cập nhật selectedAttributes)
+    selectAttribute(key, value) {
+      this.selectedAttributes = { ...this.selectedAttributes, [key]: value };
+      this.showVariantImage = true;
+    },
+    selectThumbnail(i) {
+      this.activeImg = i;
+      const img = this.allImages[i];
+      if (img && img.isVariant && img.variant) {
+        const vt = img.variant;
+        const tt = typeof vt.thuoc_tinh === 'string' ? JSON.parse(vt.thuoc_tinh) : vt.thuoc_tinh;
+        if (tt) {
+          this.selectedAttributes = { ...tt };
         }
+        this.showVariantImage = true;
+      } else {
+        this.showVariantImage = false;
       }
+    },
+    isThumbActive(img, i) {
+      if (this.showVariantImage && this.currentVariant && this.currentVariant.hinh_anh) {
+        return img.duong_dan_anh === this.currentVariant.hinh_anh;
+      }
+      return this.activeImg === i;
+    },
+    // Chuyển đổi key của thuộc tính sang nhãn hiển thị
+    prettifyKey(key) {
+      const map = {
+        'mau': 'Màu sắc', 'mau_sac': 'Màu sắc', 'color': 'Màu sắc', 'mau_se': 'Màu sắc',
+        'kich_thuoc': 'Kích thước', 'size': 'Kích thước', 'kich_co': 'Kích cỡ',
+        'chat_lieu': 'Chất liệu', 'phien_ban': 'Phiên bản', 'bo_suu_tap': 'Bộ sưu tập',
+        'tyle': 'Tỷ lệ', 'scale': 'Tỷ lệ', 'loai': 'Loại', 'thuong_hieu': 'Thương hiệu',
+      };
+      return map[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     },
     getProductImageUrl(imagePath) {
       if (!imagePath) return "https://via.placeholder.com/500?text=No+Image";
       if (imagePath.startsWith("http")) {
         return imagePath;
       }
-      return "http://127.0.0.1:8000" + (imagePath.startsWith("/") ? "" : "/") + imagePath;
+      return "" + (imagePath.startsWith("/") ? "" : "/") + imagePath;
     },
     formatPrice(val) {
       if (!val) return "0 đ";
@@ -457,7 +830,10 @@ export default {
       if (this.currentVariant.thuoc_tinh) {
         const attrs = [];
         for (const [key, value] of Object.entries(this.currentVariant.thuoc_tinh)) {
-          attrs.push(`${key}: ${value}`);
+          let friendlyKey = key;
+          if (key === 'mau_sac' || key === 'color' || key === 'Color' || key === 'Màu sắc') friendlyKey = 'Màu sắc';
+          if (key === 'kich_thuoc' || key === 'size' || key === 'Size' || key === 'Kích thước') friendlyKey = 'Kích thước';
+          attrs.push(`${friendlyKey}: ${value}`);
         }
         attributesStr = attrs.join(" - ");
       }
@@ -477,6 +853,91 @@ export default {
       sessionStorage.setItem("buy_now_checkout_item", JSON.stringify(buyNowItem));
       this.$router.push("/thanh-toan");
     },
+    async fetchReviews(page = 1) {
+      const id = this.$route.params.id;
+      if (!id) return;
+      this.reviewsLoading = true;
+      try {
+        const params = {
+          page: page,
+        };
+        if (this.reviewFilters.sao) {
+          params.sao = this.reviewFilters.sao;
+        }
+        if (this.reviewFilters.co_anh) {
+          params.co_anh = 1;
+        }
+        if (this.reviewFilters.co_binh_luan) {
+          params.co_binh_luan = 1;
+        }
+        const res = await axios.get(`/api/san-pham/${id}/danh-gia`, { params });
+        if (res.data.status) {
+          this.reviews = res.data.data.reviews.data || [];
+          this.reviewSummary = res.data.data.summary || null;
+          this.reviewsPagination = {
+            current_page: res.data.data.reviews.current_page || 1,
+            last_page: res.data.data.reviews.last_page || 1,
+          };
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải đánh giá:", err);
+      } finally {
+        this.reviewsLoading = false;
+      }
+    },
+    resetReviewFilters() {
+      this.reviewFilters = {
+        sao: null,
+        co_anh: 0,
+        co_binh_luan: 0
+      };
+      this.activeReviewFilter = 'all';
+    },
+    applyReviewFilter(filterType) {
+      this.activeReviewFilter = filterType;
+      this.reviewFilters = {
+        sao: null,
+        co_anh: 0,
+        co_binh_luan: 0
+      };
+      if (filterType === 'all') {
+        // do nothing, already null
+      } else if (['5', '4', '3', '2', '1'].includes(filterType)) {
+        this.reviewFilters.sao = parseInt(filterType);
+      } else if (filterType === 'images') {
+        this.reviewFilters.co_anh = 1;
+      } else if (filterType === 'comments') {
+        this.reviewFilters.co_binh_luan = 1;
+      }
+      this.fetchReviews(1);
+    },
+    getStarPercentage(star) {
+      if (!this.reviewSummary || !this.reviewSummary.total) return 0;
+      const count = this.reviewSummary.stars[star] || 0;
+      return Math.round((count / this.reviewSummary.total) * 100);
+    },
+    getStarCount(star) {
+      return this.reviewSummary?.stars[star] || 0;
+    },
+    openLightbox(imgUrl) {
+      this.activeLightboxImg = imgUrl;
+    },
+    getRandomAvatarBg(name) {
+      if (!name) return "linear-gradient(135deg, #e11d48, #8b5cf6)";
+      const colors = [
+        "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+        "linear-gradient(135deg, #10b981, #047857)",
+        "linear-gradient(135deg, #f59e0b, #b45309)",
+        "linear-gradient(135deg, #ef4444, #b91c1c)",
+        "linear-gradient(135deg, #8b5cf6, #5b21b6)",
+        "linear-gradient(135deg, #ec4899, #be185d)"
+      ];
+      let sum = 0;
+      for (let i = 0; i < name.length; i++) {
+        sum += name.charCodeAt(i);
+      }
+      return colors[sum % colors.length];
+    }
   },
 };
 </script>
@@ -522,7 +983,7 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 48px;
-  padding-top: 36px;
+  padding-top: 15px;
   padding-bottom: 48px;
 }
 
@@ -565,14 +1026,37 @@ export default {
   color: #94a3b8;
 }
 .pd-thumbs {
+  margin-top: 14px;
+  width: 100%;
+}
+.pd-thumbs-grid {
   display: flex;
   gap: 10px;
-  margin-top: 14px;
   flex-wrap: wrap;
+  justify-content: center;
+}
+.pd-thumbs-slider-wrapper {
+  position: relative;
+  width: 550px; /* 4 * 80px + 3 * 10px = 350px */
+  margin: 14px auto 0 auto;
+}
+.pd-thumbs-viewport {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  width: 100%;
+  border-radius: 12px;
+}
+.pd-thumbs-viewport::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+.pd-thumbs-track {
+  display: flex;
+  gap: 10px;
 }
 .pd-thumb-el {
-  width: 68px;
-  height: 68px;
+  width: 110px;
+  height: 110px;
   border-radius: 12px;
   border: 2px solid #e2e8f0;
   background: #fff;
@@ -582,16 +1066,56 @@ export default {
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
-.pd-thumb-el.active,
 .pd-thumb-el:hover {
   border-color: #e11d48;
+}
+.pd-thumb-el.active {
+  border-color: #e11d48;
+  border-width: 2.5px;
   box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
 }
 .pd-thumb-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.pd-thumbs-btn {
+  position: absolute;
+  top: 0;
+  height: 110px; /* Matches thumbnail height */
+  width: 24px;  /* Narrower overlay for better image visibility */
+  background: rgba(58, 57, 57, 0.4);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 24px;
+  line-height: 1;
+  padding-bottom: 4px;
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity 0.25s ease, background 0.25s ease;
+  user-select: none;
+}
+.pd-thumbs-btn:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+.pd-thumbs-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.pd-thumbs-btn-prev {
+  left: 0;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+.pd-thumbs-btn-next {
+  right: 0;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 /* ── Info panel ── */
@@ -864,7 +1388,7 @@ export default {
   display: flex;
   gap: 4px;
   border-bottom: 2px solid #e2e8f0;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .pd-tab {
   background: none;
@@ -925,7 +1449,7 @@ export default {
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 24px 28px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .pd-rs-score {
   font-size: 56px;
@@ -997,7 +1521,7 @@ export default {
   font-size: 22px;
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .pd-related-grid {
   display: grid;
@@ -1152,6 +1676,29 @@ export default {
   .pd-related-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Custom Review Filters and Styles */
+.pd-filter-chip {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pd-filter-chip:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+.pd-filter-chip.active {
+  background: #d70018;
+  border-color: #d70018;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(215, 0, 24, 0.2);
 }
 </style>
 

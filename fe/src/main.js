@@ -7,9 +7,20 @@ import Client_layout from './layout/wrapper/client_index.vue'
 import Toast, { createToastInterface } from "vue-toastification"
 import "vue-toastification/dist/index.css"
 import vue3GoogleLogin from 'vue3-google-login'
+import DOMPurify from 'dompurify'
 
 const app = createApp(App)
 const pinia = createPinia()
+
+// Đăng ký directive v-safe-html để lọc HTML bẩn chống XSS
+app.directive('safe-html', {
+  mounted(el, binding) {
+    el.innerHTML = DOMPurify.sanitize(binding.value || '')
+  },
+  updated(el, binding) {
+    el.innerHTML = DOMPurify.sanitize(binding.value || '')
+  }
+})
 
 app.use(pinia)
 app.use(router)

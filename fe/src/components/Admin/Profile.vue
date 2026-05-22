@@ -5,10 +5,6 @@
         <h1 class="page-h1">Thông tin cá nhân</h1>
         <p class="page-sub">Quản lý hồ sơ và bảo mật tài khoản</p>
       </div>
-      <button class="btn-primary" @click="handleSave">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13"/><polyline points="7 3 7 8 15 8"/></svg>
-        Lưu thay đổi
-      </button>
     </div>
 
     <div class="profile-layout">
@@ -65,6 +61,10 @@
               <textarea v-model="form.bio" rows="3" placeholder="Nhập thông tin giới thiệu..."></textarea>
             </div>
           </div>
+            <button style="margin-top: 10px;" class="btn-primary" @click="handleSave">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13"/><polyline points="7 3 7 8 15 8"/></svg>
+        Lưu thay đổi
+      </button>
         </div>
 
         <!-- Bảo mật -->
@@ -188,7 +188,7 @@ export default {
     },
     async fetchProfile() {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/api/thong-tin-ca-nhan/profile', this.getConfig());
+        const res = await axios.get('/api/thong-tin-ca-nhan/profile', this.getConfig());
         if (res.data.status) {
           const d = res.data.data;
           this.form.name = d.name || '';
@@ -243,7 +243,7 @@ export default {
         }
 
         const res = await axios.post(
-          'http://127.0.0.1:8000/api/thong-tin-ca-nhan/update',
+          '/api/thong-tin-ca-nhan/update',
           formData,
           this.getConfig('multipart/form-data')
         );
@@ -300,7 +300,7 @@ export default {
         };
 
         const res = await axios.post(
-          'http://127.0.0.1:8000/api/thong-tin-ca-nhan/update-password',
+          '/api/thong-tin-ca-nhan/update-password',
           payload,
           this.getConfig()
         );
@@ -334,5 +334,5 @@ export default {
 </script>
 
 <style scoped>
-@import "/style_admin/profile.css";
+@import "../../../public/style_admin/profile.css";
 </style>

@@ -89,9 +89,15 @@
 <script>
 import axios from "axios";
 import { useCartStore } from "../../store/cartStore";
+import { useAuthStore } from "../../store/authStore";
+import { useWishlistStore } from "../../store/wishlistStore";
 
 export default {
   name: "Login",
+  setup() {
+    const authStore = useAuthStore();
+    return { authStore };
+  },
   data() {
     return {
       email: "",
@@ -113,7 +119,7 @@ export default {
 
       try {
         const response = await axios.post(
-          "http://127.0.0.1:8000/api/dang-nhap",
+          "/api/dang-nhap",
           {
             email: this.email,
             mat_khau: this.password, // Backend expects mat_khau
@@ -123,15 +129,23 @@ export default {
         const user = response.data.user;
         const token = response.data.token;
 
-        // Phân quyền theo vai_tro (1: quản trị, 2: quản lý, 3: khách hàng)
-        if (user.vai_tro === 1 || user.vai_tro === 2) {
-          // Lưu token cho admin/nhân viên
-          localStorage.setItem("token_admin", token);
+        // Phân quyền theo vai_tro (1: Super Admin, 2: Quản lý, 4: Nhân viên kho, 5: Nhân viên bán hàng)
+        if ([1, 2, 4, 5].includes(user.vai_tro)) {
+          // Lưu data admin qua Pinia store
+          this.authStore.setAdminData(user, token);
           this.showToast(
             "Đăng nhập Hệ thống Quản trị viên thành công!",
             "success",
           );
-          this.$router.push("/nhan-vien/dashboard");
+          
+          // Chuyển hướng theo vai trò
+          if (user.vai_tro === 4) {
+            this.$router.push("/nhan-vien/products");
+          } else if (user.vai_tro === 5) {
+            this.$router.push("/nhan-vien/orders");
+          } else {
+            this.$router.push("/nhan-vien/dashboard");
+          }
         } else {
           // Lưu token cho khách hàng
           localStorage.setItem("token_client", token);
@@ -140,6 +154,10 @@ export default {
           // Đồng bộ giỏ hàng với máy chủ
           const cartStore = useCartStore();
           await cartStore.syncCartWithBackend();
+
+          // Đồng bộ sản phẩm yêu thích & đã xem
+          const wishlistStore = useWishlistStore();
+          await wishlistStore.syncWithBackend();
 
           window.dispatchEvent(new Event("clientLoginUpdated"));
           this.showToast(`Chào mừng quay trở lại, ${user.ho_ten}!`, "success");
@@ -202,30 +220,48 @@ export default {
         'id_token': idToken,
       };
       axios
-        .post("http://127.0.0.1:8000/api/khach-hang/login-google", payload)
+        .post("/api/khach-hang/login-google", payload)
         .then((res) => {
           if (res.data.status) {
             const token = res.data.token;
             const vai_tro = res.data.vai_tro;
             const ho_ten = res.data.ho_ten;
+            const user_id = res.data.id;
 
-            if (vai_tro === 1 || vai_tro === 2) {
-              // Lưu token cho admin/nhân viên
-              localStorage.setItem("token_admin", token);
+            if ([1, 2, 4, 5].includes(vai_tro)) {
+              const userObj = {
+                id: user_id,
+                ho_ten: ho_ten,
+                email: res.data.email || "",
+                vai_tro: vai_tro,
+                anh_dai_dien: res.data.anh_dai_dien || ""
+              };
+              this.authStore.setAdminData(userObj, token);
               localStorage.removeItem("token_client");
               localStorage.removeItem("ho_ten_client");
 
               this.showToast("Đăng nhập Hệ thống Quản trị viên thành công!", "success");
-              this.$router.push("/nhan-vien/dashboard");
+              
+              if (vai_tro === 4) {
+                this.$router.push("/nhan-vien/products");
+              } else if (vai_tro === 5) {
+                this.$router.push("/nhan-vien/orders");
+              } else {
+                this.$router.push("/nhan-vien/dashboard");
+              }
             } else {
               // Lưu token cho khách hàng
               localStorage.setItem("token_client", token);
               localStorage.setItem("ho_ten_client", ho_ten);
               localStorage.removeItem("token_admin");
 
-              // Đồng bộ giỏ hàng với máy chủ
+              // Đồng bộ giỏ hàng & sản phẩm yêu thích với máy chủ
               const cartStore = useCartStore();
-              cartStore.syncCartWithBackend().then(() => {
+              const wishlistStore = useWishlistStore();
+              Promise.all([
+                cartStore.syncCartWithBackend(),
+                wishlistStore.syncWithBackend()
+              ]).then(() => {
                 window.dispatchEvent(new Event("clientLoginUpdated"));
               });
 
@@ -253,17 +289,32 @@ export default {
       const adminToken = localStorage.getItem("token_admin");
       if (adminToken) {
         try {
-          const res = await axios.get("http://127.0.0.1:8000/api/check-token", {
+          const res = await axios.get("/api/check-token", {
             headers: {
               Authorization: "Bearer " + adminToken
             }
           });
-          if (res.data.status && (res.data.vai_tro === 1 || res.data.vai_tro === 2)) {
-            this.$router.push("/nhan-vien/dashboard");
+          if (res.data.status && [1, 2, 4, 5].includes(res.data.vai_tro)) {
+            const userObj = {
+              id: res.data.id,
+              ho_ten: res.data.ho_ten,
+              email: res.data.email,
+              vai_tro: res.data.vai_tro,
+              anh_dai_dien: res.data.anh_dai_dien || ''
+            };
+            this.authStore.setAdminData(userObj, adminToken);
+
+            if (res.data.vai_tro === 4) {
+              this.$router.push("/nhan-vien/products");
+            } else if (res.data.vai_tro === 5) {
+              this.$router.push("/nhan-vien/orders");
+            } else {
+              this.$router.push("/nhan-vien/dashboard");
+            }
             return;
           }
         } catch (error) {
-          localStorage.removeItem("token_admin");
+          this.authStore.clearAdminData();
         }
       }
 
@@ -271,7 +322,7 @@ export default {
       const customerToken = localStorage.getItem("token_client");
       if (customerToken) {
         try {
-          const res = await axios.get("http://127.0.0.1:8000/api/check-token", {
+          const res = await axios.get("/api/check-token", {
             headers: {
               Authorization: 'Bearer ' + customerToken
             }

@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
             MaGiamGiaSeeder::class,
             DonHangSeeder::class,
             TaiKhoanNganHangSeeder::class,
+            DanhGiaSeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }

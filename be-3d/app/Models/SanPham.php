@@ -23,6 +23,7 @@ class SanPham extends Model
         'gia_goc',
         'mo_ta',
         'tinh_trang',
+        'so_luong_ton_kho',
     ];
 
     public function danhMuc()
@@ -38,5 +39,25 @@ class SanPham extends Model
     public function bienThes()
     {
         return $this->hasMany(BienTheSanPham::class, 'id_san_pham');
+    }
+
+    public function thuocTinhs()
+    {
+        return $this->hasMany(ThuocTinh::class, 'id_san_pham');
+    }
+
+    public function danhGias()
+    {
+        return $this->hasMany(DanhGia::class, 'id_san_pham');
+    }
+
+    public function yeuThichs()
+    {
+        return $this->hasMany(YeuThich::class, 'id_san_pham');
+    }
+
+    public function daXems()
+    {
+        return $this->hasMany(DaXem::class, 'id_san_pham');
     }
 }

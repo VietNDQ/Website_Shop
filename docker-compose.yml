@@ -26,6 +26,8 @@ services:
     container_name: shop-app
     volumes:
       - ./be-3d:/var/www
+    env_file:        
+      - .env
     environment:
       DB_HOST: mysql
       REDIS_HOST: redis

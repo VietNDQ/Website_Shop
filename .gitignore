@@ -1,0 +1,8 @@
+# Environment files
+.env
+
+# Scratch files
+scratch_diff.txt
+.gemini/
+.claude/
+.cursor/

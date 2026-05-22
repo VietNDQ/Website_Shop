@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # 1. Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: shop-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./be-3d:/var/www
+      - ./fe/dist:/usr/share/nginx/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # 2. Application Backend (Laravel PHP-FPM)
+  app:
+    build:
+      context: ./be-3d
+      dockerfile: Dockerfile
+    container_name: shop-app
+    volumes:
+      - ./be-3d:/var/www
+    environment:
+      DB_HOST: mysql
+      REDIS_HOST: redis
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # 3. Database MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: shop-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    expose:
+      - "3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # 4. Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: shop-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+  redis-data:
+    driver: local

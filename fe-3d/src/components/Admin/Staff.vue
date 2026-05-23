@@ -30,7 +30,8 @@
           </div>
         </div>
 
-        <table class="data-table">
+        <div style="overflow-x: auto;">
+          <table class="data-table">
           <thead>
             <tr>
               <th style="color:black">Nhân viên</th>
@@ -38,7 +39,7 @@
               <th style="color:black">Vai trò</th>
               <th style="color:black">Trạng thái</th>
               <th style="color:black">Đăng nhập cuối</th>
-              <th style="color:black">Thao tác</th>
+              <th class="text-center" style="color:black; text-align: center;">Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -60,11 +61,12 @@
                 </span>
               </td>
               <td class="whitespace-nowrap">{{ s.lastLogin }}</td>
-              <td>
-                <div class="action-btns">
+              <td class="text-center align-middle">
+                <div class="action-btns justify-center" style="justify-content: center;">
                   <button class="act-btn edit" @click="openModal('edit', s)" title="Sửa chi tiết"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                   <button 
-                    class="act-btn" 
+                    class="act-btn mr-2" 
+                    style="margin-right: 8px;"
                     :class="s.active ? 'del' : 'edit'" 
                     @click="confirmToggleLock(s)" 
                     :title="isCurrentUser(s.email) ? 'Không thể tự khóa tài khoản của chính mình' : (s.active ? 'Khóa tài khoản' : 'Mở khóa tài khoản')"
@@ -82,7 +84,8 @@
               <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">Không tìm thấy nhân viên phù hợp.</td>
             </tr>
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       <!-- Activity logs -->
@@ -447,4 +450,9 @@ export default {
 
 <style scoped>
 @import "../../../public/style_admin/staff.css";
+.data-table th,
+.data-table td {
+  padding-left: 5px;
+  padding-right: 5px;
+}
 </style>

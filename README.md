@@ -1,7 +1,6 @@
 # 🧸 Hệ Thống Thương Mại Điện Tử Shop BALAB
 
-> [!IMPORTANT]
-> ### 🌐 TRẢI NGHIỆM LIVE DEMO TRỰC TUYẾN
+> ### 🌐 TRẢI NGHIỆM HỆ THỐNG
 > Hệ thống cửa hàng BALAB vận hành tại địa chỉ:
 > ## 👉 **[balab.studio](https://balab.studio/)**
 

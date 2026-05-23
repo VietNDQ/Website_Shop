@@ -151,7 +151,7 @@ class NguoiDungController extends Controller
         $totalSpentCalculated = $user->donHangs()
             ->whereIn('trang_thai', ['hoan_thanh', 'da_giao'])
             ->sum('tong_thanh_toan');
-        $userPointsCalculated = Math_floor_helper($totalSpentCalculated / 1000);
+        $userPointsCalculated = (int) floor($totalSpentCalculated / 1000);
 
         // Đọc từ cột DB nếu đã chạy migration thành công, ngược lại dùng giá trị vừa tính
         $tongChiTieu = Schema::hasColumn('nguoi_dung', 'tong_chi_tieu') ? $user->tong_chi_tieu : $totalSpentCalculated;
@@ -183,7 +183,7 @@ class NguoiDungController extends Controller
                 'zalo_id' => $user->zalo_id,
                 'tong_chi_tieu' => (float) $tongChiTieu,
                 'diem_thanh_vien' => (int) $diemThanhVien,
-                'updated_at' => $user->cap_nhat_luc ? $user->cap_nhat_luc->format('d/m/Y H:i') : null
+                'updated_at' => $user->cap_nhat_luc ? \Carbon\Carbon::parse($user->cap_nhat_luc)->format('d/m/Y H:i') : null
             ]
         ]);
     }
@@ -208,10 +208,10 @@ class NguoiDungController extends Controller
         ];
 
         if (Schema::hasColumn('nguoi_dung', 'ngay_sinh')) {
-            $updateData['ngay_sinh'] = $request->ngay_sinh;
+            $updateData['ngay_sinh'] = $request->ngay_sinh ?: null;
         }
         if (Schema::hasColumn('nguoi_dung', 'gioi_thieu')) {
-            $updateData['gioi_thieu'] = $request->gioi_thieu;
+            $updateData['gioi_thieu'] = $request->gioi_thieu ?: null;
         }
 
         if ($request->hasFile('avatar')) {
@@ -690,10 +690,4 @@ class NguoiDungController extends Controller
             'message' => 'Hủy liên kết tài khoản Zalo thành công.'
         ]);
     }
-}
-
-// Hàm bổ trợ tính toán phần nguyên
-function Math_floor_helper($val)
-{
-    return (int) floor($val);
 }

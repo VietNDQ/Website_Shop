@@ -11,10 +11,26 @@ class UpdateProfileRequest extends FormRequest
         return true; 
     }
 
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'ngay_sinh' => $this->ngay_sinh ?: null,
+            'gioi_thieu' => $this->gioi_thieu ?: null,
+            'so_dien_thoai' => $this->so_dien_thoai ?: null,
+            'dia_chi' => $this->dia_chi ?: null,
+        ]);
+    }
+
     public function rules(): array
     {
         return [
             'ho_ten'       => 'required|string|max:255',
+            'email'        => [
+                'required',
+                'email',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('nguoi_dung', 'email')->ignore($this->user()?->id),
+            ],
             'ngay_sinh'    => 'nullable|date|before:today',
             'gioi_thieu'   => 'nullable|string|max:1000',
             'anh_dai_dien' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
@@ -46,6 +62,11 @@ class UpdateProfileRequest extends FormRequest
             'ho_ten.required'       => 'Họ tên không được để trống.',
             'ho_ten.string'         => 'Họ tên phải là chuỗi ký tự.',
             'ho_ten.max'            => 'Họ tên không vượt quá 255 ký tự.',
+            
+            'email.required'        => 'Email không được để trống.',
+            'email.email'           => 'Email không đúng định dạng.',
+            'email.max'             => 'Email không vượt quá 255 ký tự.',
+            'email.unique'          => 'Email này đã được sử dụng bởi tài khoản khác.',
             
             'ngay_sinh.date'        => 'Ngày sinh không đúng định dạng.',
             'ngay_sinh.before'      => 'Ngày sinh phải là một ngày trong quá khứ.',

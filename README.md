@@ -2,17 +2,8 @@
 
 > [!IMPORTANT]
 > ### 🌐 TRẢI NGHIỆM LIVE DEMO TRỰC TUYẾN
-> Hệ thống cửa hàng BALAB đã được deploy và vận hành chính thức trên Cloud Server tại địa chỉ:
-> ## 👉 **[balab.studio](https://balab.studio/)** 👈
->
-> ---
-> **🔑 TÀI KHOẢN DÙNG THỬ HỆ THỐNG:**
-> * **Giao diện Client (Khách hàng)**: 
->   * Bạn có thể tự đăng ký tài khoản mới hoặc đăng nhập nhanh bằng **Google OAuth 2.0**.
->   * Hoặc dùng tài khoản sẵn có: `nguyenqviet3885@gmail.com` | Mật khẩu: `123456`
-> * **Giao diện Admin (Quản trị)**: 
->   * Truy cập: **[balab.studio/admin](https://balab.studio/admin)** (Hoặc đăng nhập admin rồi click nút "Quản trị" trên header)
->   * Email: `admin@gmail.com` | Mật khẩu: `123456`
+> Hệ thống cửa hàng BALAB vận hành tại địa chỉ:
+> ## 👉 **[balab.studio](https://balab.studio/)**
 
 [![Website](https://img.shields.io/badge/Website-balab.studio-brightgreen.svg?style=for-the-badge&logo=google-chrome)](https://balab.studio/)
 [![Laravel Version](https://img.shields.io/badge/Laravel-v12.0-red.svg?style=for-the-badge&logo=laravel)](https://laravel.com)

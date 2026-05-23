@@ -1,0 +1,25 @@
+# netlify.toml - Frontend Configuration for Netlify (routing to VPS API)
+
+[[redirects]]
+  from = "/api/*"
+  to = "http://167.99.68.104/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/storage/*"
+  to = "http://167.99.68.104/storage/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "http://167.99.68.104/uploads/:splat"
+  status = 200
+  force = true
+
+# SPA routing for Vue Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

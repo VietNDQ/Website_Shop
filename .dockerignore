@@ -1,0 +1,15 @@
+# Exclude node modules and build artifacts
+**/node_modules
+**/dist
+**/vendor
+**/.git
+**/.env
+**/.dockerignore
+**/.gitignore
+**/storage/*.key
+**/storage/framework/cache/data/*
+**/storage/framework/sessions/*
+**/storage/framework/views/*
+**/storage/logs/*
+**/services/chatbot-ai/venv
+**/services/chatbot-ai/logs/*

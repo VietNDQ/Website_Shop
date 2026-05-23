@@ -2,7 +2,7 @@
 
 > [!IMPORTANT]
 > ### 🌐 TRẢI NGHIỆM LIVE DEMO TRỰC TUYẾN
-> Hệ thống cửa hàng BALAB đã được deploy và vận hành chính thức trên Cloud Server tại địa chỉ:
+> Hệ thống cửa hàng BALAB vận hành tại địa chỉ:
 > ## 👉 **[balab.studio](https://balab.studio/)**
 
 [![Website](https://img.shields.io/badge/Website-balab.studio-brightgreen.svg?style=for-the-badge&logo=google-chrome)](https://balab.studio/)

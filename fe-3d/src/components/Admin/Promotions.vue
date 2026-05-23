@@ -58,6 +58,8 @@
             <th>Giá trị</th>
             <th>Đơn tối thiểu</th>
             <th>Đã dùng / Giới hạn</th>
+            <th>Phát hành</th>
+            <th>Ngân sách</th>
             <th>Hết hạn</th>
             <th>Trạng thái</th>
             <th>Thao tác</th>
@@ -75,6 +77,18 @@
                 <div class="usage-bar"><div class="usage-fill" :style="{ width: Math.min((c.used / c.limit * 100), 100) + '%' }"></div></div>
               </div>
             </td>
+            <td>
+              <span class="status-pill" :class="c.distributeMethod === 'public' ? 's-delivered' : (c.distributeMethod === 'claimable' ? 's-pending' : 's-processing')">
+                {{ c.distributeMethod === 'public' ? 'Đại trà' : (c.distributeMethod === 'claimable' ? 'Thu thập' : 'Phân bổ kín') }}
+              </span>
+            </td>
+            <td>
+              <div v-if="c.budget" class="usage-wrap" style="width: 110px;">
+                <span style="font-size:10px">{{ formatPrice(c.spentBudget) }} / {{ formatPrice(c.budget) }}</span>
+                <div class="usage-bar"><div class="usage-fill" :style="{ width: Math.min((c.spentBudget / c.budget * 100), 100) + '%' }"></div></div>
+              </div>
+              <span v-else class="text-xs text-gray-500">Vô hạn</span>
+            </td>
             <td>{{ formatDate(c.expiry) }}</td>
             <td>
               <span class="status-pill" :class="isCouponExpired(c) ? 's-cancelled' : (c.active ? 's-delivered' : 's-cancelled')">
@@ -83,13 +97,16 @@
             </td>
             <td>
               <div class="action-btns">
+                <button v-if="c.distributeMethod === 'targeted'" class="act-btn edit" @click="openDistributeModal(c)" title="Phân bổ trực tiếp" style="color: #8b5cf6; border-color: #d8b4fe; background: #faf5ff; margin-right: 4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="23" y1="11" x2="17" y2="11" /><line x1="20" y1="8" x2="20" y2="14" /></svg>
+                </button>
                 <button class="act-btn edit" @click="openCouponModal('edit', c)" title="Sửa & Chi tiết"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button class="act-btn del" @click="confirmDeleteCoupon(c)" title="Xoá"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
               </div>
             </td>
           </tr>
           <tr v-if="filteredCoupons.length === 0">
-            <td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">Không tìm thấy mã giảm giá nào phù hợp.</td>
+            <td colspan="10" style="text-align: center; color: #94a3b8; padding: 30px;">Không tìm thấy mã giảm giá nào phù hợp.</td>
           </tr>
         </tbody>
       </table>
@@ -223,9 +240,29 @@
               <label>Đơn tối thiểu (₫)</label>
               <input type="number" v-model.number="couponForm.minOrder" placeholder="VD: 200000" />
             </div>
+            <div class="form-group" v-if="couponForm.type === 'Phần trăm'">
+              <label>Trần giảm tối đa (₫) <span class="req">*</span></label>
+              <input type="number" v-model.number="couponForm.maxDiscount" placeholder="VD: 50000" />
+            </div>
+            <div class="form-group" v-else>
+              <label>Trần giảm tối đa (₫)</label>
+              <input type="number" v-model.number="couponForm.maxDiscount" placeholder="Không bắt buộc" />
+            </div>
             <div class="form-group">
               <label>Giới hạn sử dụng</label>
               <input type="number" v-model.number="couponForm.limit" placeholder="100" />
+            </div>
+            <div class="form-group">
+              <label>Ngân sách chiến dịch (₫)</label>
+              <input type="number" v-model.number="couponForm.budget" placeholder="Để trống nếu vô hạn" />
+            </div>
+            <div class="form-group span-2">
+              <label>Hình thức phát hành <span class="req">*</span></label>
+              <select v-model="couponForm.distributeMethod" class="sel" style="width: 100%;">
+                <option value="public">Đại trà (Công khai, ai cũng dùng được 1 lần)</option>
+                <option value="claimable">Thu thập (Lưu vào ví rồi mới dùng)</option>
+                <option value="targeted">Phân bổ kín (Admin tặng riêng cho từng User)</option>
+              </select>
             </div>
             <div class="form-group span-2">
               <label>Ngày hết hạn</label>
@@ -300,6 +337,44 @@
         </div>
       </div>
     </div>
+
+    <!-- Targeted Distribution Modal -->
+    <div class="modal-overlay" v-if="showDistributeModal" @click.self="showDistributeModal = false">
+      <div class="modal-box" style="max-width: 600px;">
+        <div class="modal-header">
+          <h2>Phân bổ Voucher Kín: <code class="sku">{{ selectedCouponToDistribute?.code }}</code></h2>
+          <button class="modal-close" @click="showDistributeModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm text-gray-500" style="margin-bottom: 12px; font-size:13px; color:#64748b">
+            Mã voucher này thuộc hình thức phát hành <strong>Phân bổ kín</strong>. Admin có thể chọn danh sách các khách hàng bên dưới để phát tặng trực tiếp vào ví của họ.
+          </p>
+          <div class="customer-selection-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+            <div v-for="cust in customers" :key="cust.id" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 6px;">
+              <label :for="'cust-' + cust.id" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; margin: 0;">
+                <input type="checkbox" :id="'cust-' + cust.id" :value="cust.id" v-model="selectedUserIds" style="width: 16px; height: 16px;" />
+                <div>
+                  <div style="font-weight: 600; font-size: 13.5px; color: #1e293b;">{{ cust.name }}</div>
+                  <div style="font-size: 12px; color: #64748b;">Email: {{ cust.email }} | SĐT: {{ cust.phone }}</div>
+                </div>
+              </label>
+              <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #e0f2fe; color: #0369a1;">
+                {{ cust.group }}
+              </span>
+            </div>
+            <div v-if="customers.length === 0" style="text-align: center; color: #94a3b8; padding: 20px;">
+              Đang tải danh sách khách hàng...
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="showDistributeModal = false">Hủy</button>
+          <button class="btn-primary" @click="submitDistribution" style="background: #8b5cf6; border-color: #8b5cf6;" :disabled="selectedUserIds.length === 0">
+            Phân bổ trực tiếp (Đã chọn {{ selectedUserIds.length }} user)
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -322,8 +397,14 @@ export default {
       couponForm: {
         code: '', type: 'Phần trăm', value: '',
         minOrder: '', limit: 100, expiry: '', active: true,
+        budget: '', maxDiscount: '', distributeMethod: 'public',
       },
       coupons: [],
+      // ── Targeted Distribution ───────────────
+      showDistributeModal: false,
+      selectedCouponToDistribute: null,
+      selectedUserIds: [],
+      customers: [],
       // ── Flash Sale ───────────────────────────
       showFlashModal: false,
       flashModalMode: 'add',
@@ -409,12 +490,14 @@ export default {
           code: coupon.code, type: coupon.type, value: coupon.value,
           minOrder: coupon.minOrder, limit: coupon.limit,
           expiry: coupon.expiry || '', active: coupon.active,
+          budget: coupon.budget || '', maxDiscount: coupon.maxDiscount || '',
+          distributeMethod: coupon.distributeMethod || 'public',
         };
       } else {
         this.couponForm = {
           code: '', type: 'Phần trăm', value: '', minOrder: '', limit: 100,
           expiry: new Date(Date.now() + 30 * 864e5).toISOString().split('T')[0],
-          active: true,
+          active: true, budget: '', maxDiscount: '', distributeMethod: 'public',
         };
       }
       this.showModal = true;
@@ -423,6 +506,10 @@ export default {
     async saveCoupon() {
       if (!this.couponForm.code || !this.couponForm.value) {
         this.showToast('Vui lòng nhập đầy đủ mã voucher và giá trị giảm!', 'error'); return;
+      }
+      if (this.couponForm.type === 'Phần trăm' && (!this.couponForm.maxDiscount || this.couponForm.maxDiscount <= 0)) {
+        this.showToast('Vui lòng nhập trần giảm giá tối đa (> 0) khi chọn giảm theo phần trăm!', 'error');
+        return;
       }
       this.couponLoading = true;
       try {
@@ -446,6 +533,46 @@ export default {
         const msg = e.response?.data?.message || 'Có lỗi xảy ra!';
         this.showToast(msg, 'error');
       } finally { this.couponLoading = false; }
+    },
+
+    /* ── Targeted distribution methods ──────── */
+    async openDistributeModal(coupon) {
+      this.selectedCouponToDistribute = coupon;
+      this.selectedUserIds = [];
+      this.showDistributeModal = true;
+      if (this.customers.length === 0) {
+        try {
+          const res = await axios.get('/api/quan-ly/khach-hang/data', this.getConfig());
+          if (res.data.status) {
+            this.customers = res.data.data;
+          }
+        } catch (e) {
+          console.error(e);
+          this.showToast('Lỗi khi tải danh sách khách hàng!', 'error');
+        }
+      }
+    },
+
+    async submitDistribution() {
+      if (this.selectedUserIds.length === 0) {
+        this.showToast('Vui lòng chọn ít nhất một khách hàng!', 'warning');
+        return;
+      }
+      try {
+        const res = await axios.post('/api/quan-ly/khuyen-mai/coupon/distribute', {
+          voucher_id: this.selectedCouponToDistribute.id,
+          user_ids: this.selectedUserIds
+        }, this.getConfig());
+        if (res.data.status) {
+          this.showToast(res.data.message, 'success');
+          this.showDistributeModal = false;
+          await this.fetchCoupons();
+        } else {
+          this.showToast(res.data.message || 'Lỗi phân bổ!', 'error');
+        }
+      } catch (e) {
+        this.showToast(e.response?.data?.message || 'Có lỗi xảy ra!', 'error');
+      }
     },
 
     confirmDeleteCoupon(coupon) {

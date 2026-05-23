@@ -20,7 +20,7 @@
 
     <div v-else>
       <!-- KPI Cards -->
-      <div class="kpi-grid">
+      <div style="margin-bottom: 5px;" class="kpi-grid">
         <div class="kpi-card" v-for="k in kpis" :key="k.label" :style="{ '--accent': k.color }">
           <div class="kpi-icon" :style="{ background: k.iconBg }"><span v-html="k.icon"></span></div>
           <div class="kpi-body">
@@ -37,7 +37,7 @@
       </div>
 
       <!-- Charts Row -->
-      <div class="charts-row">
+      <div style="margin-bottom: 5px;" class="charts-row">
         <!-- Doanh thu theo thời gian -->
         <div class="card card-body chart-card">
           <h3 class="card-title-sm" style="margin-bottom:20px">{{ chartTitle }}</h3>

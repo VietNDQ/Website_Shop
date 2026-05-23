@@ -96,9 +96,19 @@
         <div class="activity-list">
           <div class="activity-item" v-for="act in activities" :key="act.id">
             <div class="act-dot" :style="{ background: act.color }"></div>
-            <div class="act-body">
-              <p class="act-text">{{ act.text }}</p>
-              <p class="act-time">{{ act.time }}</p>
+            <div class="act-body" style="flex: 1; min-width: 0;">
+              <div class="act-meta" style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                <span class="act-user" style="font-size: 13.5px; font-weight: 700; color: #0f172a;">{{ act.user }}</span>
+                <span class="act-time" style="font-size: 11px; color: #94a3b8; white-space: nowrap;">{{ act.time }}</span>
+              </div>
+              <p class="act-text" style="font-size: 13px; color: #334155; margin-top: 3px; line-height: 1.4; word-break: break-word;">{{ act.action }}</p>
+              <div v-if="act.ip" class="act-details" style="display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 9.5px; color: #64748b; font-family: monospace;">
+                <span class="act-ip" style="background: #f1f5f9; padding: 1px 4px; border-radius: 4px; color: #475569;">{{ act.ip }}</span>
+                <template v-if="act.ua">
+                  <span class="act-divider" style="color: #cbd5e1;">•</span>
+                  <span class="act-ua" :title="act.ua" style="color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">{{ parseDevice(act.ua) }}</span>
+                </template>
+              </div>
             </div>
           </div>
           <div v-if="activities.length === 0 && !loading" style="text-align: center; color: #94a3b8; padding: 20px;">
@@ -203,6 +213,26 @@ export default {
       } else if (label === "Thông báo") {
         this.toast.info('Thông báo mới nhất đang được đồng bộ!');
       }
+    },
+    parseDevice(ua) {
+      if (!ua) return '';
+      let os = 'Unknown OS';
+      let browser = 'Unknown Browser';
+
+      if (ua.includes('Windows NT')) os = 'Windows';
+      else if (ua.includes('Macintosh')) os = 'macOS';
+      else if (ua.includes('iPhone')) os = 'iOS';
+      else if (ua.includes('iPad')) os = 'iPadOS';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('Linux')) os = 'Linux';
+
+      if (ua.includes('Chrome') && !ua.includes('Chromium') && !ua.includes('Edg')) browser = 'Chrome';
+      else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+      else if (ua.includes('Firefox')) browser = 'Firefox';
+      else if (ua.includes('Edg')) browser = 'Edge';
+      else if (ua.includes('Trident') || ua.includes('MSIE')) browser = 'IE';
+
+      return `${browser} (${os})`;
     },
   },
 };

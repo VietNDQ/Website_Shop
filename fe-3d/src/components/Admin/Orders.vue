@@ -84,12 +84,9 @@
             <td>{{ o.date }}</td>
             <td><span class="status-pill" :class="'s-' + o.status">{{ statusMap[o.status] }}</span></td>
             <td class="text-center align-middle">
-              <div class="action-btns">
+              <div class="action-btns" style="display: flex; justify-content: center; align-items: center; width: 100%;">
                 <button class="act-btn view" @click="openDetail(o)" title="Chi tiết">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
+                  <i class="fa-solid fa-file-pen"></i>
                 </button>
               </div>
             </td>
@@ -250,6 +247,13 @@
         <div class="modal-footer">
           <button class="btn-outline" @click="exportInvoicePDF">In hóa đơn</button>
 
+          <!-- Xác nhận thanh toán chuyển khoản thủ công -->
+          <button class="btn-primary" style="background-color:#10b981; border-color:#10b981;"
+            v-if="selectedOrder.payment === 'Chuyển khoản' && selectedOrder.payment_status !== 'da_thanh_toan' && !['da_huy', 'hoan_tien'].includes(selectedOrder.status)"
+            @click="confirmPayment">
+            ✓ Xác nhận thanh toán
+          </button>
+
           <!-- Xác nhận đơn -->
           <button class="btn-primary" style="background-color:#3b82f6; border-color:#3b82f6;"
             v-if="selectedOrder.status === 'cho_xu_ly'"
@@ -313,6 +317,30 @@
           <button class="btn-primary"
             style="background-color:#3b82f6; border-color:#3b82f6; padding:10px 24px; border-radius:8px; font-weight:600;"
             @click="executeStatusUpdate">Đồng ý</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== Confirm Payment Modal (Xác nhận nhận tiền chuyển khoản) ============================== -->
+    <div class="modal-overlay" v-if="showPaymentConfirmModal" @click.self="showPaymentConfirmModal = false">
+      <div class="modal-box" style="max-width:420px; text-align:center; border-radius:16px; padding:32px 24px;">
+        <div style="width:54px; height:54px; border-radius:50%; background:#ecfdf5; color:#10b981; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            <line x1="12" y1="6" x2="12.01" y2="6"></line>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+        <h3 style="margin-bottom:12px; font-size:20px; font-weight:700; color:#111827;">Xác nhận thanh toán</h3>
+        <p style="color:#4b5563; line-height:1.5; font-size:15px; margin-bottom:28px;">
+          Bạn có chắc chắn đơn hàng này đã nhận được tiền chuyển khoản?
+        </p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+          <button class="btn-ghost" style="padding:10px 24px; border-radius:8px;" @click="showPaymentConfirmModal = false">Huỷ bỏ</button>
+          <button class="btn-primary"
+            style="background-color:#10b981; border-color:#10b981; padding:10px 24px; border-radius:8px; font-weight:600;"
+            @click="executePaymentConfirmation">Xác nhận</button>
         </div>
       </div>
     </div>
@@ -555,6 +583,9 @@ export default {
       showConfirmModal: false,
       pendingStatus: null,
 
+      // Confirm payment modal (xác nhận tiền chuyển khoản)
+      showPaymentConfirmModal: false,
+
       // Cancel dialog (nhập lý do hủy)
       showCancelDialog: false,
       cancelReason: '',
@@ -764,6 +795,35 @@ export default {
     async confirmRefundOrder() {
       this.showRefundDialog = false;
       await this.doUpdateStatus('hoan_tien', this.refundReason.trim());
+    },
+
+    // ===================== Confirm Payment =====================
+    confirmPayment() {
+      this.showPaymentConfirmModal = true;
+    },
+    async executePaymentConfirmation() {
+      this.showPaymentConfirmModal = false;
+      try {
+        const res = await axios.patch(
+          `/api/quan-ly/don-hang/${this.selectedOrder.id}/thanh-toan`,
+          { trang_thai: 'da_thanh_toan' },
+          { headers: { Authorization: `Bearer ${localStorage.getItem('token_admin')}` } }
+        );
+        if (res.data.status === 1) {
+          this.toast.success(res.data.message);
+          this.selectedOrder.payment_status = 'da_thanh_toan';
+          this.selectedOrder.payment_status_label = 'Đã thanh toán';
+          if (this.selectedOrder.status === 'cho_xu_ly') {
+            this.selectedOrder.status = 'dang_chuan_bi';
+          }
+          await this.fetchOrders();
+        } else {
+          this.toast.error(res.data.message);
+        }
+      } catch (err) {
+        console.error(err);
+        this.toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi xác nhận thanh toán');
+      }
     },
 
     // ===================== Core status update =====================

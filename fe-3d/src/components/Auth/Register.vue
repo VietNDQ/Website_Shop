@@ -147,6 +147,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "Register",
   data() {
@@ -161,7 +163,7 @@ export default {
     };
   },
   methods: {
-    handleRegister() {
+    async handleRegister() {
       if (
         !this.fullname ||
         !this.email ||
@@ -177,6 +179,19 @@ export default {
         return;
       }
 
+      if (this.password.length < 8) {
+        this.showToast("Mật khẩu phải có độ dài ít nhất 8 ký tự!", "error");
+        return;
+      }
+
+      // Ràng buộc mật khẩu: phải chứa ít nhất một chữ cái và một chữ số
+      const hasLetter = /[a-zA-Z]/.test(this.password);
+      const hasDigit = /[0-9]/.test(this.password);
+      if (!hasLetter || !hasDigit) {
+        this.showToast("Mật khẩu phải chứa ít nhất một chữ cái và một chữ số!", "error");
+        return;
+      }
+
       if (!this.acceptTerms) {
         this.showToast("Bạn cần đồng ý với các điều khoản dịch vụ!", "warning");
         return;
@@ -184,15 +199,28 @@ export default {
 
       this.loading = true;
 
-      // Simulate API call
-      setTimeout(() => {
-        this.loading = false;
-        this.showToast(
-          `Đăng ký thành công tài khoản cho ${this.fullname}!`,
-          "success",
-        );
+      try {
+        const response = await axios.post("/api/dang-ky", {
+          ho_ten: this.fullname,
+          email: this.email,
+          mat_khau: this.password,
+        });
+
+        this.showToast("Đăng ký tài khoản thành công!", "success");
         this.$router.push("/login");
-      }, 1500);
+      } catch (error) {
+        let errorMessage = "Đăng ký tài khoản thất bại. Vui lòng thử lại!";
+        if (error.response && error.response.data) {
+          if (error.response.data.errors) {
+            errorMessage = Object.values(error.response.data.errors).map(v => v[0]).join("\n");
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          }
+        }
+        this.showToast(errorMessage, "error");
+      } finally {
+        this.loading = false;
+      }
     },
     loginWithSocial(platform) {
       this.showToast(

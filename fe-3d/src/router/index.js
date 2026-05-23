@@ -39,6 +39,11 @@ const routes = [
         meta: { layout: 'client' },
     },
     {
+        path: '/kho-voucher',
+        component: () => import('../components/Client/VoucherStore.vue'),
+        meta: { layout: 'client' },
+    },
+    {
         path: '/lien-he',
         component: () => import('../components/Client/Contact.vue'),
         meta: { layout: 'client' },

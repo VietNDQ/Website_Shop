@@ -324,7 +324,7 @@
 
                 <div class="price-row">
                   <span>Phí vận chuyển</span>
-                  <span class="val-bold">30.000đ</span>
+                  <span class="val-bold">{{ (isLoggedIn && userTier === 'vang') ? 'Miễn phí' : '30.000đ' }}</span>
                 </div>
 
                 <!-- Coin discount row -->
@@ -338,11 +338,11 @@
                 <!-- Add Coins option & Voucher option -->
                 <div class="summary-discount-options">
                   <!-- Coins option -->
-                  <div v-if="isLoggedIn && userCoins > 0" class="coin-usage-row">
+                  <div v-if="isLoggedIn && userCoins >= 10 && maxCoinsAllowedToUse > 0" class="coin-usage-row">
                     <label class="flex items-center gap-2 cursor-pointer select-none">
                       <input type="checkbox" v-model="useCoins" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer" />
                       <span class="text-sm font-semibold text-gray-700">
-                        Dùng <strong class="text-yellow-600">{{ userCoins }}</strong> xu để giảm <strong class="text-yellow-600">{{ formatCurrency(userCoins) }}</strong>
+                        Dùng <strong class="text-yellow-600">{{ maxCoinsAllowedToUse }}</strong> xu để giảm <strong class="text-yellow-600">{{ formatCurrency(maxCoinsAllowedToUse * 1000) }}</strong> (Ví của bạn có {{ userCoins }} xu)
                       </span>
                     </label>
                   </div>
@@ -367,7 +367,37 @@
                         Áp dụng
                       </button>
                     </div>
-                    <div class="voucher-applied-display" v-else>
+                    
+                    <!-- Wallet Vouchers Dropdown Selection -->
+                    <div class="select-wallet-voucher" v-if="isLoggedIn && !appliedVoucher && myVouchers.length > 0">
+                      <button type="button" class="btn-select-voucher-wallet" @click="showVoucherDropdown = !showVoucherDropdown">
+                        🎟️ Chọn voucher từ ví (Có {{ myVouchers.length }} mã khả dụng)
+                      </button>
+                      <div class="voucher-wallet-dropdown-panel" v-if="showVoucherDropdown">
+                        <div 
+                          v-for="v in myVouchers" 
+                          :key="v.id" 
+                          class="voucher-dropdown-item"
+                          :class="{ 'disabled': cartTotal < v.minOrder }"
+                          @click="selectVoucherFromWallet(v)"
+                        >
+                          <div class="vd-info">
+                            <span class="vd-code">{{ v.code }}</span>
+                            <span class="vd-desc">{{ v.title }}</span>
+                            <span class="vd-min-order">Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            class="btn-select-v"
+                            :disabled="cartTotal < v.minOrder"
+                          >
+                            Áp dụng
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="voucher-applied-display" v-else-if="appliedVoucher">
                       <div class="voucher-applied-tag">
                         <i class="fa-solid fa-ticket text-red-500"></i>
                         <span>{{ appliedVoucher.ma_code }}</span>
@@ -575,7 +605,10 @@ export default {
       isValidatingVoucher: false,
       useCoins: false,
       userCoins: 0,
+      userTier: 'dong',
       buyNowItem: null,
+      myVouchers: [],
+      showVoucherDropdown: false,
     };
   },
   computed: {
@@ -584,7 +617,19 @@ export default {
       return this.cartStore ? this.cartStore.items.filter(item => item.isSelected !== false) : [];
     },
     cartTotal() {
-      return this.cartItems.reduce((total, item) => total + (item.gia_ban * item.so_luong), 0);
+      const items = this.cartItems;
+      return items.reduce((total, item) => {
+        let giaBan = parseFloat(item.gia_ban || 0);
+        const isPhuKien = ['dung-cu-lap-rap-cat-got', 'son-va-hoa-chat-mo-hinh', 'dung-cu-ca-nhan'].includes(item.duong_dan_mau_danh_muc);
+        if (isPhuKien && this.isLoggedIn) {
+          if (this.userTier === 'bac') {
+            giaBan = giaBan * 0.99; // Giảm 1%
+          } else if (this.userTier === 'vang') {
+            giaBan = giaBan * 0.95; // Giảm 5%
+          }
+        }
+        return total + (giaBan * item.so_luong);
+      }, 0);
     },
     voucherDiscountAmount() {
       if (!this.appliedVoucher) return 0;
@@ -600,13 +645,20 @@ export default {
         return v.gia_tri_giam;
       }
     },
-    coinDiscountAmount() {
-      if (!this.useCoins || this.userCoins <= 0) return 0;
+    maxCoinsAllowedToUse() {
+      if (!this.isLoggedIn || this.userCoins < 10) return 0;
       const remainingPayableBeforeCoins = Math.max(0, this.cartTotal - this.voucherDiscountAmount);
-      return Math.min(this.userCoins, remainingPayableBeforeCoins);
+      const maxDiscountMoney = remainingPayableBeforeCoins * 0.5; // Tối đa 50%
+      const maxCoinsAllowed = Math.floor(maxDiscountMoney / 1000);
+      return Math.min(this.userCoins, Math.min(500, maxCoinsAllowed));
+    },
+    coinDiscountAmount() {
+      if (!this.useCoins) return 0;
+      return this.maxCoinsAllowedToUse * 1000;
     },
     finalTotal() {
-      return Math.max(0, this.cartTotal - this.voucherDiscountAmount - this.coinDiscountAmount + 30000);
+      const phiShip = (this.isLoggedIn && this.userTier === 'vang') ? 0 : 30000;
+      return Math.max(0, this.cartTotal - this.voucherDiscountAmount - this.coinDiscountAmount + phiShip);
     },
     isGuestFormValid() {
       const gi = this.guestInfo;
@@ -652,7 +704,8 @@ export default {
     if (this.isLoggedIn) {
       await Promise.all([
         this.loadAddresses(),
-        this.loadUserProfile()
+        this.loadUserProfile(),
+        this.loadMyVouchers()
       ]);
     }
     this.loading = false;
@@ -859,10 +912,46 @@ export default {
         });
         if (res.data && res.data.status === 1) {
           this.userCoins = res.data.data.diem_thanh_vien || 0;
+          this.userTier = res.data.data.hang_thanh_vien || 'dong';
         }
       } catch (error) {
         console.error("Lỗi tải thông tin cá nhân:", error);
       }
+    },
+
+    async loadMyVouchers() {
+      const token = localStorage.getItem("token_client");
+      if (!token) return;
+      try {
+        const res = await axios.get("/api/khach-hang/ma-giam-gia/my-vouchers", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data && res.data.status) {
+          // Chỉ lấy voucher còn sử dụng được (trang_thai = unused, active = true)
+          this.myVouchers = res.data.data.filter(v => v.trang_thai === 'unused' && v.active);
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải ví voucher:", error);
+      }
+    },
+
+    selectVoucherFromWallet(v) {
+      if (this.cartTotal < v.minOrder) {
+        this.showToast(`Đơn hàng chưa đạt giá trị tối thiểu ${this.formatCurrency(v.minOrder)}!`, "warning");
+        return;
+      }
+      this.appliedVoucher = {
+        id: v.id_ma_giam_gia,
+        ma_code: v.code,
+        loai_giam_gia: v.type === 'Phần trăm' ? 'phan_tram' : 'tien_mat',
+        gia_tri_giam: v.value,
+        don_hang_toi_thieu: v.minOrder,
+        muc_giam_toi_da: v.maxDiscount,
+      };
+      this.voucherCode = v.code;
+      this.voucherSuccess = "Áp dụng voucher từ ví thành công!";
+      this.showVoucherDropdown = false;
+      this.showToast("Áp dụng mã giảm giá thành công!", "success");
     },
 
     async applyVoucher() {
@@ -876,7 +965,9 @@ export default {
       this.voucherSuccess = "";
       try {
         const code = this.voucherCode.toUpperCase().trim();
-        const res = await axios.get(`/api/ma-giam-gia/kiem-tra/${code}`);
+        const token = localStorage.getItem("token_client");
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        const res = await axios.get(`/api/ma-giam-gia/kiem-tra/${code}`, config);
         if (res.data && res.data.status) {
           const voucher = res.data.voucher;
           if (this.cartTotal < voucher.don_hang_toi_thieu) {
@@ -2168,6 +2259,124 @@ export default {
   background: #059669;
   border-color: #059669;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Scoped styles for Voucher Wallet dropdown in Checkout */
+.select-wallet-voucher {
+  position: relative;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.btn-select-voucher-wallet {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-select-voucher-wallet:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.voucher-wallet-dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.voucher-dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.voucher-dropdown-item:hover:not(.disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.voucher-dropdown-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vd-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.vd-code {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: left;
+}
+
+.vd-desc {
+  font-size: 12px;
+  color: #475569;
+  text-align: left;
+}
+
+.vd-min-order {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: left;
+}
+
+.btn-select-v {
+  background: #e30019;
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-select-v:hover {
+  background: #c20014;
+}
+
+.btn-select-v:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 </style>
 

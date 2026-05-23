@@ -1,0 +1,18 @@
+2026-05-23 14:46:15,967 [INFO] [New Chat] Nhận tin nhắn: 'Tìm giúp tôi xem shop có mô hình robot nào giá tầm 1 triệu không?' | Lịch sử: 0 tin nhắn
+2026-05-23 14:46:18,698 [INFO] [AI Request Function] Yêu cầu gọi hàm: 'search_products' với đối số: {'query': 'mô hình robot'}
+2026-05-23 14:46:18,698 [INFO] [Tool Call] Đang tìm kiếm sản phẩm với từ khóa: 'mô hình robot'
+2026-05-23 14:46:46,264 [INFO] [Tool Success] Đã tìm thấy 1 sản phẩm phù hợp.
+2026-05-23 14:46:46,264 [INFO] [AI Request Final] Gửi kết quả gọi hàm lên Gemini lần 2...
+2026-05-23 14:46:47,744 [INFO] [Response Success] AI trả lời sau khi gọi hàm: 'Chào bạn, BALAB có Mô hình Robot Gundam RX-78-2 Bản Thường với giá 1.200.000 đ và hiện đang còn hàng bạn nhé.'
+2026-05-23 14:47:21,060 [INFO] [New Chat] Nhận tin nhắn: 'Tìm giúp tôi xem shop có mô hình robot nào giá tầm 1 triệu không?' | Lịch sử: 0 tin nhắn
+2026-05-23 14:47:23,105 [INFO] [AI Request Function] Yêu cầu gọi hàm: 'search_products' với đối số: {'query': 'mô hình robot'}
+2026-05-23 14:47:23,105 [INFO] [Tool Call] Đang tìm kiếm sản phẩm với từ khóa: 'mô hình robot'
+2026-05-23 14:47:23,289 [INFO] [Tool Success] Đã tìm thấy 1 sản phẩm phù hợp.
+2026-05-23 14:47:23,289 [INFO] [AI Request Final] Gửi kết quả gọi hàm lên Gemini lần 2...
+2026-05-23 14:47:25,128 [INFO] [Response Success] AI trả lời sau khi gọi hàm: 'Chào bạn, BALAB có Mô hình Robot Gundam RX-78-2 Bản Thường với giá 1.200.000 đ, sản phẩm này hiện đang còn hàng ạ. Bạn có muốn tìm hiểu thêm về sản phẩm này không?'
+2026-05-23 14:47:42,927 [INFO] [New Chat] Nhận tin nhắn: 'Kiểm tra giúp tôi đơn hàng mã ORD-YKQSUGYW đang ở trạng thái nào rồi?' | Lịch sử: 0 tin nhắn
+2026-05-23 14:47:44,730 [INFO] [AI Request Function] Yêu cầu gọi hàm: 'check_order_status' với đối số: {'ma_don_hang': 'ORD-YKQSUGYW'}
+2026-05-23 14:47:44,730 [INFO] [Tool Call] Đang tra cứu đơn hàng mã: 'ORD-YKQSUGYW'
+2026-05-23 14:47:44,934 [INFO] [Tool Success] Đã tìm thấy thông tin đơn hàng ORD-YKQSUGYW.
+2026-05-23 14:47:44,934 [INFO] [AI Request Final] Gửi kết quả gọi hàm lên Gemini lần 2...
+2026-05-23 14:47:46,914 [INFO] [Response Success] AI trả lời sau khi gọi hàm: 'Đơn hàng của bạn với mã ORD-YKQSUGYW đã được giao hàng thành công vào ngày 31/12/2025 tại địa chỉ 180 Nguyễn Văn Linh, Hải Châu, Đà Nẵng. Tổng thanh toán là 3.705.000 đ và đơn hàng đã được thanh toán rồi ạ.'

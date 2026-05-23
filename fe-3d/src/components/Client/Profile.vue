@@ -72,10 +72,14 @@
               <div class="member-logo">Smember</div>
             </div>
 
-            <div class="loyalty-stats-grid">
+            <div class="loyalty-stats-grid" style="grid-template-columns: repeat(4, 1fr);">
               <div class="loyalty-stat">
-                <div class="stat-num">{{ formatPoints(userPoints) }}</div>
-                <div class="stat-label">Điểm tích lũy</div>
+                <div class="stat-num" style="color: #E87F24;">{{ formatPoints(userPoints) }}</div>
+                <div class="stat-label">Ví xu khả dụng</div>
+              </div>
+              <div class="loyalty-stat">
+                <div class="stat-num" style="color: #4ED7F1;">{{ formatPoints(pendingPoints) }}</div>
+                <div class="stat-label">Điểm chờ duyệt</div>
               </div>
               <div class="loyalty-stat">
                 <div class="stat-num">{{ formatPrice(totalSpent) }}</div>
@@ -515,21 +519,32 @@
 
         <!-- TAB 5: MY VOUCHERS -->
         <div v-else-if="activeTab === 'vouchers'" class="tab-pane">
-          <div class="content-header">
-            <h2>Ưu đãi của tôi</h2>
-            <p>
-              Danh sách các mã giảm giá đặc quyền và ưu đãi vận chuyển dành cho
-              bạn
-            </p>
+          <div class="content-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+            <div>
+              <h2>Ưu đãi của tôi</h2>
+              <p>
+                Danh sách các mã giảm giá đặc quyền và ưu đãi vận chuyển dành cho bạn
+              </p>
+            </div>
+            <button class="btn-goto-store" @click="$router.push('/kho-voucher')">
+              🎁 Nhận thêm voucher tại Kho Voucher
+            </button>
           </div>
 
-          <div class="vouchers-grid">
+          <div v-if="vouchers.length === 0" class="empty-state" style="padding: 60px 20px;">
+            <span class="empty-icon" style="font-size: 48px; display: block; margin-bottom: 16px;">🎟️</span>
+            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Ví voucher trống</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 24px;">Bạn chưa có mã giảm giá nào trong ví của mình.</p>
+            <button class="btn-shop-now" @click="$router.push('/kho-voucher')">Đến Kho Voucher</button>
+          </div>
+          <div v-else class="vouchers-grid">
             <div
               v-for="voucher in vouchers"
               :key="voucher.code"
               class="voucher-card"
+              :style="voucher.trang_thai === 'used' ? 'opacity: 0.6; filter: grayscale(1);' : ''"
             >
-              <div class="voucher-left">
+              <div class="voucher-left" :style="voucher.trang_thai === 'used' ? 'background: #cbd5e1;' : ''">
                 <span class="v-icon">🎟️</span>
               </div>
               <div class="voucher-right">
@@ -539,7 +554,8 @@
                   <span class="v-code"
                     >Code: <strong>{{ voucher.code }}</strong></span
                   >
-                  <button class="btn-copy" @click="copyCode(voucher.code)">
+                  <span v-if="voucher.trang_thai === 'used'" style="font-size: 11px; font-weight: 700; color: #64748b; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">Đã sử dụng</span>
+                  <button v-else class="btn-copy" @click="copyCode(voucher.code)">
                     Copy mã
                   </button>
                 </div>
@@ -1323,24 +1339,9 @@ export default {
 
       // Mock Loyalty points and Vouchers
       userPoints: 0,
+      pendingPoints: 0,
       totalSpent: 0, // Tổng tiền tích lũy mua hàng
-      vouchers: [
-        {
-          code: "CHAMUNG",
-          title: "Mã Chào Mừng 10%",
-          desc: "Giảm 10% tối đa 50K cho đơn hàng tối thiểu 200K.",
-        },
-        {
-          code: "GIAM50K",
-          title: "Khuyến mãi 50K",
-          desc: "Giảm trực tiếp 50K cho đơn hàng tối thiểu 500K.",
-        },
-        {
-          code: "FREESHIP",
-          title: "Miễn phí vận chuyển",
-          desc: "Giảm tối đa 30K phí vận chuyển cho đơn hàng từ 300K.",
-        },
-      ],
+      vouchers: [],
 
       // Forms
       profileForm: {
@@ -1391,34 +1392,34 @@ export default {
       if (this.user.avatar) {
         return this.user.avatar;
       }
-      return "https://cellphones.com.vn/sforum/wp-content/uploads/2023/10/avatar-trang-4.jpg";
+      return "https://cdn-icons-png.flaticon.com/512/149/149071.png";
     },
     memberTierName() {
-      if (this.totalSpent >= 2000000) return "S-VIP (Vàng)";
-      if (this.totalSpent >= 500000) return "S-Class (Bạc)";
+      if (this.totalSpent >= 15000000) return "S-VIP (Vàng)";
+      if (this.totalSpent >= 5000000) return "S-Class (Bạc)";
       return "Smember (Đồng)";
     },
     memberTierClass() {
-      if (this.totalSpent >= 2000000) return "svip";
-      if (this.totalSpent >= 500000) return "sclass";
+      if (this.totalSpent >= 15000000) return "svip";
+      if (this.totalSpent >= 5000000) return "sclass";
       return "snormal";
     },
     nextTierName() {
-      if (this.totalSpent >= 2000000) return null;
-      if (this.totalSpent >= 500000) return "S-VIP (Vàng)";
+      if (this.totalSpent >= 15000000) return null;
+      if (this.totalSpent >= 5000000) return "S-VIP (Vàng)";
       return "S-Class (Bạc)";
     },
     amountToNextTier() {
-      if (this.totalSpent >= 2000000) return 0;
-      if (this.totalSpent >= 500000) return 2000000 - this.totalSpent;
-      return 500000 - this.totalSpent;
+      if (this.totalSpent >= 15000000) return 0;
+      if (this.totalSpent >= 5000000) return 15000000 - this.totalSpent;
+      return 5000000 - this.totalSpent;
     },
     tierProgressPercent() {
-      if (this.totalSpent >= 2000000) return 100;
-      if (this.totalSpent >= 500000) {
-        return ((this.totalSpent - 500000) / 1500000) * 100;
+      if (this.totalSpent >= 15000000) return 100;
+      if (this.totalSpent >= 5000000) {
+        return ((this.totalSpent - 5000000) / 10000000) * 100;
       }
-      return (this.totalSpent / 500000) * 100;
+      return (this.totalSpent / 5000000) * 100;
     },
     defaultAddressText() {
       const def = this.addresses.find(a => a.la_mac_dinh);
@@ -1511,6 +1512,9 @@ export default {
     this.loadRecentlyViewed();
     this.fetchProvinces();
     document.addEventListener("click", this.closeSearchDropdowns);
+    if (this.$route.query.tab) {
+      this.activeTab = this.$route.query.tab;
+    }
   },
   beforeUnmount() {
     document.removeEventListener("click", this.closeSearchDropdowns);
@@ -2273,6 +2277,7 @@ export default {
 
           this.totalSpent = d.tong_chi_tieu || 0;
           this.userPoints = d.diem_thanh_vien || 0;
+          this.pendingPoints = d.diem_cho_duyet || 0;
         }
 
         // 2. Tải sổ địa chỉ nhận hàng
@@ -2286,6 +2291,9 @@ export default {
 
         // 3. Tải lịch sử đơn hàng (Trang đầu tiên)
         await this.loadOrders(1);
+        
+        // 4. Tải ví voucher cá nhân
+        await this.loadMyVouchers();
       } catch (error) {
         console.error("Lỗi khi tải thông tin cá nhân:", error);
         if (error.response && error.response.status === 401) {
@@ -2711,6 +2719,29 @@ export default {
       navigator.clipboard.writeText(code);
       this.$toast.success(`Đã copy mã voucher: ${code}`);
     },
+    async loadMyVouchers() {
+      try {
+        const token = this.getToken();
+        if (!token) return;
+        const res = await axios.get("/api/khach-hang/ma-giam-gia/my-vouchers", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data.status) {
+          this.vouchers = res.data.data.map(v => ({
+            code: v.code,
+            title: v.type === 'Phần trăm' ? `Giảm ${v.value}%` : `Giảm ${this.formatPrice(v.value)}`,
+            desc: `${v.type === 'Phần trăm' ? `Giảm ${v.value}%` : `Giảm ${this.formatPrice(v.value)}`}` + 
+                  `${v.maxDiscount ? ` tối đa ${this.formatPrice(v.maxDiscount)}` : ''}` + 
+                  ` cho đơn hàng tối thiểu ${this.formatPrice(v.minOrder)}.` + 
+                  `${v.expiry ? ` Hết hạn: ${this.formatDate(v.expiry)}` : ''}`,
+            trang_thai: v.trang_thai,
+          }));
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải ví voucher:", error);
+      }
+    },
+
     formatPrice(value) {
       if (!value) return "0 đ";
       return new Intl.NumberFormat("vi-VN", {
@@ -4292,6 +4323,29 @@ export default {
   border-radius: 6px;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* ── Kho Voucher Button Styles ── */
+.btn-goto-store {
+  background: linear-gradient(135deg, #e30019, #c20014);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(227, 0, 25, 0.15);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-goto-store:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(227, 0, 25, 0.25);
+  background: linear-gradient(135deg, #c20014, #a1000f);
 }
 
 /* ── Wishlist & Recently Viewed CSS ── */

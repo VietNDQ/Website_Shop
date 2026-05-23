@@ -9,10 +9,38 @@
 .r-warehouse { background: rgba(14,165,233,0.12); color: #0284c7; }
 .r-sales     { background: rgba(34,197,94,0.12); color: #16a34a; }
 .log-card { width: 300px; flex-shrink: 0; }
-.log-list { padding: 12px; display: flex; flex-direction: column; gap: 0; }
+.log-list { 
+  padding: 12px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0; 
+  max-height: 635px; 
+  overflow-y: auto; 
+}
+/* Custom Scrollbar for activity logs */
+.log-list::-webkit-scrollbar {
+  width: 5px;
+}
+.log-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.log-list::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 99px;
+}
+.log-list::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
 .log-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f8fafc; }
 .log-item:last-child { border-bottom: none; }
 .log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-.log-user { font-size: 12px; font-weight: 700; color: #0f172a; }
-.log-action { font-size: 11.5px; color: #475569; margin-top: 2px; line-height: 1.4; }
-.log-time { font-size: 10.5px; color: #94a3b8; margin-top: 3px; }
+.log-body { flex: 1; min-width: 0; }
+.log-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.log-user { font-size: 12.5px; font-weight: 700; color: #0f172a; }
+.log-time { font-size: 10px; color: #94a3b8; white-space: nowrap; }
+.log-action { font-size: 11.5px; color: #334155; margin-top: 3px; line-height: 1.4; word-break: break-word; }
+.log-details { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 9.5px; color: #64748b; font-family: monospace; }
+.log-ip { background: #f1f5f9; padding: 1px 4px; border-radius: 4px; color: #475569; }
+.log-divider { color: #cbd5e1; }
+.log-ua { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }

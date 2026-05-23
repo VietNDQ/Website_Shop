@@ -7,9 +7,9 @@
     <div class="hero-orb hero-orb-2"></div>
     <div class="hero-inner">
       <div class="hero-content">
-        <div class="hero-eyebrow">Mô Hình In 3D Cao Cấp</div>
+        <div class="hero-eyebrow">Sản Phẩm In 3D Cao Cấp</div>
         <h1 class="hero-heading">
-          Khám Phá Mô Hình<br />
+          Khám Phá Sản Phẩm<br />
           <em>Độc Đáo</em><br />
           Của Riêng Bạn
         </h1>

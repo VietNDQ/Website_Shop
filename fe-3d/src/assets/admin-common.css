@@ -238,7 +238,7 @@
 /* Action buttons */
 .action-btns { display: flex; gap: 6px; }
 .act-btn {
-  width: 30px; height: 30px;
+  width: 40px; height: 40px;
   border-radius: 7px;
   border: 1.5px solid #e2e8f0;
   background: #f8fafc;
@@ -247,9 +247,9 @@
   transition: all 0.15s;
   color: #64748b;
 }
-.act-btn.edit:hover { border-color: #6366f1; background: rgba(99,102,241,0.08); color: #6366f1; }
+.act-btn.edit:hover { border-color: #54df2a; background: rgba(22, 185, 7, 0.08); color: #20e14a; }
 .act-btn.del:hover  { border-color: #D70018; background: rgba(215,0,24,0.08); color: #D70018; }
-.act-btn.view:hover { border-color: #0ea5e9; background: rgba(14,165,233,0.08); color: #0ea5e9; }
+.act-btn.view:hover { border-color: #c0c308; background: rgba(14,165,233,0.08); color: #bae90e; }
 
 /* Modal */
 .modal-overlay {

@@ -94,9 +94,18 @@
           <div class="log-item" v-for="log in activityLogs" :key="log.id">
             <div class="log-dot" :style="{ background: log.color }"></div>
             <div class="log-body">
-              <p class="log-user">{{ log.user }}</p>
+              <div class="log-meta">
+                <span class="log-user">{{ log.user }}</span>
+                <span class="log-time">{{ log.time }}</span>
+              </div>
               <p class="log-action">{{ log.action }}</p>
-              <p class="log-time">{{ log.time }}</p>
+              <div v-if="log.ip" class="log-details">
+                <span class="log-ip">{{ log.ip }}</span>
+                <template v-if="log.ua">
+                  <span class="log-divider">•</span>
+                  <span class="log-ua" :title="log.ua">{{ parseDevice(log.ua) }}</span>
+                </template>
+              </div>
             </div>
           </div>
         </div>
@@ -253,6 +262,26 @@ export default {
       if (role === 'Nhân viên kho') return 'warehouse';
       if (role === 'Nhân viên bán hàng') return 'sales';
       return 'sales';
+    },
+    parseDevice(ua) {
+      if (!ua) return '';
+      let os = 'Unknown OS';
+      let browser = 'Unknown Browser';
+
+      if (ua.includes('Windows NT')) os = 'Windows';
+      else if (ua.includes('Macintosh')) os = 'macOS';
+      else if (ua.includes('iPhone')) os = 'iOS';
+      else if (ua.includes('iPad')) os = 'iPadOS';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('Linux')) os = 'Linux';
+
+      if (ua.includes('Chrome') && !ua.includes('Chromium') && !ua.includes('Edg')) browser = 'Chrome';
+      else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+      else if (ua.includes('Firefox')) browser = 'Firefox';
+      else if (ua.includes('Edg')) browser = 'Edge';
+      else if (ua.includes('Trident') || ua.includes('MSIE')) browser = 'IE';
+
+      return `${browser} (${os})`;
     },
     openModal(mode, staffMember = null) {
       this.modalMode = mode;

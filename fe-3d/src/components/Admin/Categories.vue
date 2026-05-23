@@ -184,6 +184,7 @@
 
 <script>
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 export default {
   name: "AdminCategories",
@@ -415,7 +416,61 @@ export default {
       }
     },
     exportExcel() {
+      let dataToExport = [];
+      
+      // Nếu có chọn checkbox, xuất những mục được chọn
+      if (this.selectedIds.length > 0) {
+        dataToExport = this.categories.filter(c => this.selectedIds.includes(c.id));
+      } else {
+        // Ngược lại, xuất những mục đang được hiển thị theo bộ lọc
+        dataToExport = this.filteredCategories;
+      }
+
+      if (dataToExport.length === 0) {
+        this.showToast("Không có dữ liệu danh mục để xuất!", "warning");
+        return;
+      }
+
       this.showToast("Bắt đầu xuất file Excel... Tải xuống sẽ bắt đầu sau giây lát.");
+
+      // Map dữ liệu sang định dạng Excel tiếng Việt
+      const excelRows = dataToExport.map(c => ({
+        "Biểu tượng (Emoji)": c.emoji || "📁",
+        "Tên danh mục": c.name,
+        "Mã danh mục (Slug)": c.slug,
+        "Thứ tự hiển thị": c.orderIndex,
+        "Số lượng sản phẩm": c.productCount || 0,
+        "Trạng thái": c.status === "active" ? "Hiển thị" : "Đang ẩn",
+        "Mô tả": c.desc || "Không có mô tả chi tiết"
+      }));
+
+      // Tạo worksheet và workbook
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách danh mục");
+
+      // Căn chỉnh độ rộng cột tự động dựa trên độ dài nội dung dài nhất trong mỗi cột
+      const maxColsWidth = [];
+      excelRows.forEach(row => {
+        Object.keys(row).forEach((key, colIndex) => {
+          const val = row[key];
+          // Đối với tiếng Việt có dấu, độ dài ký tự thô có thể khác nhưng .length là đủ dùng ở mức cơ bản
+          const cellLength = val ? val.toString().length : 0;
+          const keyLength = key.length;
+          const maxLength = Math.max(cellLength, keyLength);
+          
+          if (!maxColsWidth[colIndex] || maxLength > maxColsWidth[colIndex]) {
+            maxColsWidth[colIndex] = maxLength;
+          }
+        });
+      });
+
+      // Gán độ rộng cột (thêm một khoảng đệm nhỏ)
+      worksheet["!cols"] = maxColsWidth.map(w => ({ w: w + 5 }));
+
+      // Xuất file và tải về
+      XLSX.writeFile(workbook, "Danh_sach_danh_muc.xlsx");
+      this.showToast("Xuất file Excel thành công!");
     }
   }
 };

@@ -10,6 +10,7 @@
     </main>
 
     <Footer_Client />
+    <Chatbot_Client />
   </div>
 </template>
 
@@ -17,6 +18,7 @@
 import Header_Client from "../components/Client/Header_Client.vue";
 import Menu_Client from "../components/Client/Menu_Client.vue";
 import Footer_Client from "../components/Client/Footer_Client.vue";
+import Chatbot_Client from "../../components/Client/Chatbot_Client.vue";
 
 export default {
   name: "ClientLayout",
@@ -24,6 +26,7 @@ export default {
     Header_Client,
     Menu_Client,
     Footer_Client,
+    Chatbot_Client,
   },
 };
 </script>

@@ -455,7 +455,7 @@ export default {
       if (this.userAvatar) {
         const imgUrl = this.userAvatar.startsWith("http")
           ? this.userAvatar
-          : "/" + this.userAvatar;
+          : (this.userAvatar.startsWith("/") ? this.userAvatar : "/" + this.userAvatar);
         return {
           backgroundImage: `url(${imgUrl})`,
           backgroundSize: "cover",

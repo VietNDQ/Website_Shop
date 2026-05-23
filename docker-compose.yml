@@ -1,11 +1,9 @@
-version: '3.8'
+# docker-compose.yml - Backend only (Frontend on Netlify)
 
 services:
   # 1. Nginx Web Server
   nginx:
-    build:
-      context: .
-      dockerfile: ./docker/nginx/Dockerfile
+    image: nginx:alpine
     container_name: shop-nginx
     ports:
       - "80:80"

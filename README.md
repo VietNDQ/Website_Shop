@@ -1,22 +1,29 @@
 # 🧸 Hệ Thống Thương Mại Điện Tử Shop BALAB
 
-[![Website](https://img.shields.io/badge/Website-balab.studio-brightgreen.svg?style=flat-square&logo=google-chrome)](https://balab.studio/)
-[![Laravel Version](https://img.shields.io/badge/Laravel-v12.0-red.svg?style=flat-square&logo=laravel)](https://laravel.com)
-[![Vue Version](https://img.shields.io/badge/Vue.js-v3.3-green.svg?style=flat-square&logo=vue.js)](https://vuejs.org)
-[![Vite](https://img.shields.io/badge/Vite-v4.4-blue.svg?style=flat-square&logo=vite)](https://vitejs.dev)
-[![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg?style=flat-square&logo=docker)](https://www.docker.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+> [!IMPORTANT]
+> ### 🌐 TRẢI NGHIỆM LIVE DEMO TRỰC TUYẾN
+> Hệ thống cửa hàng BALAB đã được deploy và vận hành chính thức trên Cloud Server tại địa chỉ:
+> ## 👉 **[balab.studio](https://balab.studio/)** 👈
+>
+> ---
+> **🔑 TÀI KHOẢN DÙNG THỬ HỆ THỐNG:**
+> * **Giao diện Client (Khách hàng)**: 
+>   * Bạn có thể tự đăng ký tài khoản mới hoặc đăng nhập nhanh bằng **Google OAuth 2.0**.
+>   * Hoặc dùng tài khoản sẵn có: `nguyenqviet3885@gmail.com` | Mật khẩu: `123456`
+> * **Giao diện Admin (Quản trị)**: 
+>   * Truy cập: **[balab.studio/admin](https://balab.studio/admin)** (Hoặc đăng nhập admin rồi click nút "Quản trị" trên header)
+>   * Email: `admin@gmail.com` | Mật khẩu: `123456`
+
+[![Website](https://img.shields.io/badge/Website-balab.studio-brightgreen.svg?style=for-the-badge&logo=google-chrome)](https://balab.studio/)
+[![Laravel Version](https://img.shields.io/badge/Laravel-v12.0-red.svg?style=for-the-badge&logo=laravel)](https://laravel.com)
+[![Vue Version](https://img.shields.io/badge/Vue.js-v3.3-green.svg?style=for-the-badge&logo=vue.js)](https://vuejs.org)
+[![Vite](https://img.shields.io/badge/Vite-v4.4-blue.svg?style=for-the-badge&logo=vite)](https://vitejs.dev)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg?style=for-the-badge&logo=docker)](https://www.docker.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 Hệ thống bán hàng trực tuyến chuyên nghiệp chuyên cung cấp các sản phẩm Shop nhân vật (Anime Figures) và Shop 3D, được phát triển với kiến trúc tách biệt hoàn toàn giữa **Backend API** (Laravel 12) và **Frontend SPA** (Vue 3, Vite, Pinia).
 
 Dự án tích hợp đầy đủ quy trình bán hàng khép kín, quản trị bán hàng thông minh (Admin Dashboard), đồng bộ dữ liệu thời gian thực (Pusher), hệ thống cảnh báo lỗi tự động qua Telegram (Telegram Alert), và các tiêu chuẩn bảo mật nghiêm ngặt nhất.
-
----
-
-## 🌐 Demo Trực Tuyến
-
-Hệ thống đã được triển khai chính thức trên hosting. Bạn có thể truy cập và trải nghiệm trực tiếp tại:
-👉 **[https://balab.studio](https://balab.studio)**
 
 ---
 

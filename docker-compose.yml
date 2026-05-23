@@ -26,6 +26,7 @@ services:
     container_name: shop-app
     volumes:
       - ./be-3d:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     env_file:        
       - .env
     environment:

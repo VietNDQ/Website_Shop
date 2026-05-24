@@ -53,14 +53,22 @@
           <p class="footer-newsletter-desc">
             Nhận thông tin sớm nhất về các đợt pre-order và ưu đãi độc quyền.
           </p>
-          <div class="newsletter-input-wrap">
+          <form @submit.prevent="subscribeNewsletter" class="newsletter-input-wrap">
             <input
               class="newsletter-input"
               type="email"
               placeholder="Địa chỉ email của bạn"
+              v-model.trim="newsletterEmail"
+              :disabled="submitting"
+              required
             />
-            <router-link to="/login" class="newsletter-btn"><b>Đăng ký</b></router-link>
-          </div>
+            <button type="submit" class="newsletter-btn" :disabled="submitting">
+              <span v-if="submitting">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+              </span>
+              <span v-else><b>Đăng ký</b></span>
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -83,7 +91,70 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  name: 'FooterComponent'
+  name: 'FooterComponent',
+  data() {
+    return {
+      newsletterEmail: '',
+      submitting: false
+    };
+  },
+  methods: {
+    async subscribeNewsletter() {
+      const email = this.newsletterEmail.trim();
+      if (!email) return;
+
+      // Email regex validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        if (this.$toast) {
+          this.$toast.error("Vui lòng nhập địa chỉ email hợp lệ!");
+        } else {
+          alert("Vui lòng nhập địa chỉ email hợp lệ!");
+        }
+        return;
+      }
+
+      this.submitting = true;
+      try {
+        const token = localStorage.getItem("token_client");
+        const headers = {};
+        if (token) {
+          headers.Authorization = 'Bearer ' + token;
+        }
+
+        const res = await axios.post('/api/lien-he', {
+          ho_ten: 'Khách hàng đăng ký nhận tin',
+          email: email,
+          so_dien_thoai: '',
+          tieu_de: 'Đăng ký nhận tin bản tin',
+          noi_dung: 'Khách hàng đăng ký nhận thông tin pre-order và ưu đãi độc quyền từ Footer.'
+        }, { headers });
+
+        if (res.data.status) {
+          if (this.$toast) {
+            this.$toast.success(res.data.message || "Đăng ký nhận tin thành công! Cảm ơn bạn.");
+          } else {
+            alert(res.data.message || "Đăng ký nhận tin thành công! Cảm ơn bạn.");
+          }
+          this.newsletterEmail = '';
+        } else {
+          throw new Error(res.data.message || "Gửi đăng ký nhận tin thất bại.");
+        }
+      } catch (err) {
+        console.error(err);
+        const errorMsg = err.response?.data?.message || "Đăng ký nhận tin thất bại. Vui lòng thử lại!";
+        if (this.$toast) {
+          this.$toast.error(errorMsg);
+        } else {
+          alert(errorMsg);
+        }
+      } finally {
+        this.submitting = false;
+      }
+    }
+  }
 };
 </script>

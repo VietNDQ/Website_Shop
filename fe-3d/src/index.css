@@ -350,7 +350,7 @@ body {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 800;
   font-size: clamp(44px, 5.5vw, 72px);
-  line-height: 0.95;
+  line-height: 1;
   letter-spacing: -0.01em;
   color: #fff;
   text-transform: uppercase;
@@ -1315,3 +1315,429 @@ footer {
     font-size: 10.5px;
   }
 }
+
+/* ==========================================================================
+   ─── HOMEPAGE UPGRADES (NEW STYLES) ───
+   ========================================================================== */
+
+/* 1. Lưới Icon Ngành Hàng (Category Grid Shortcuts) */
+.category-shortcuts-section {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 30px 20px;
+}
+.category-shortcuts-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: clamp(16px, 3.5vw, 40px);
+  flex-wrap: wrap;
+}
+.shortcut-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  width: 90px;
+  transition: transform 0.2s;
+}
+.shortcut-item:hover, .shortcut-item.active {
+  transform: translateY(-4px);
+}
+.shortcut-item.active .shortcut-icon-wrap {
+  outline: 3px solid var(--red);
+  outline-offset: 3px;
+  transform: scale(1.08);
+}
+.shortcut-item.active .shortcut-label {
+  color: var(--red);
+  font-weight: 800;
+}
+.shortcut-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s;
+}
+.shortcut-item:hover .shortcut-icon-wrap {
+  box-shadow: 0 10px 20px rgba(215, 0, 24, 0.15);
+}
+.shortcut-label {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-word;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* 2. Skeleton Loading */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+.skeleton-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 350px;
+  box-sizing: border-box;
+}
+.skeleton-image {
+  height: 180px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  width: 100%;
+}
+.skeleton-text {
+  height: 14px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  width: 100%;
+}
+.skeleton-text.short {
+  width: 60%;
+}
+.skeleton-text.price {
+  height: 20px;
+  width: 40%;
+  margin-top: 8px;
+}
+.skeleton-pulse {
+  animation: skeleton-keyframes 1.5s infinite ease-in-out;
+}
+@keyframes skeleton-keyframes {
+  0% { opacity: 0.55; }
+  50% { opacity: 1; }
+  100% { opacity: 0.55; }
+}
+
+/* 3. Bố Cục Banner kết hợp Slider Ngang */
+.featured-slider-section {
+  background: var(--bg);
+  padding: 60px 0;
+}
+.featured-slider-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  gap: 24px;
+  box-sizing: border-box;
+}
+.slider-banner {
+  width: 280px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #311018 100%);
+  padding: 32px 24px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+.slider-banner::after {
+  content: '';
+  position: absolute;
+  top: -50px; right: -50px;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(215, 0, 24, 0.2), transparent 70%);
+  z-index: 1;
+}
+.slider-banner-top {
+  position: relative;
+  z-index: 2;
+}
+.slider-banner-tag {
+  display: inline-block;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+.slider-banner-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: #fff;
+}
+.slider-banner-title em {
+  font-style: normal;
+  color: var(--red);
+}
+.slider-banner-desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+  margin-top: 12px;
+}
+.slider-banner-btn {
+  position: relative;
+  z-index: 2;
+  background: #fff;
+  color: #0f172a;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+}
+.slider-banner-btn:hover {
+  background: var(--red);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(215, 0, 24, 0.3);
+}
+.slider-main {
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
+}
+.slider-container {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 4px 20px;
+  scrollbar-width: none; /* Firefox */
+  box-sizing: border-box;
+}
+.slider-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+.slider-container .product-card {
+  width: 220px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.slider-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  transition: all 0.2s;
+  color: var(--text);
+  font-size: 16px;
+}
+.slider-arrow:hover {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+.slider-arrow.left {
+  left: -22px;
+}
+.slider-arrow.right {
+  right: -22px;
+}
+
+/* 4. Khối Gundam Space Showcase (Hero Danh mục riêng biệt) */
+.gundam-showcase-section {
+  background-color: #0b0f19;
+  background-image: radial-gradient(circle at 80% 20%, rgba(215, 0, 24, 0.1), transparent 50%);
+  padding: 70px 0;
+  color: #fff;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.gundam-showcase-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+  box-sizing: border-box;
+}
+.gundam-showcase-section .section-eyebrow {
+  color: var(--red-light);
+}
+.gundam-showcase-section .section-title {
+  color: #fff;
+}
+.gundam-showcase-section .btn-view-all {
+  color: var(--red-light);
+  border-color: var(--red-light);
+}
+.gundam-showcase-section .btn-view-all:hover {
+  background: var(--red-light);
+  color: #fff;
+}
+.gundam-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+/* Thẻ sản phẩm tối đặc biệt cho Gundam */
+.dark-product-card {
+  background: #131926;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  cursor: pointer;
+  position: relative;
+}
+.dark-product-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(240, 62, 62, 0.5);
+  box-shadow: 0 12px 32px rgba(240, 62, 62, 0.15);
+}
+.dark-product-card .product-img-wrap {
+  background: #1e2638;
+}
+.dark-product-card .product-img-wrap::after {
+  background: linear-gradient(to top, rgba(0,0,0,0.2), transparent);
+}
+.dark-product-card .product-info {
+  padding: 16px;
+  background: #131926;
+}
+.dark-product-card .product-brand {
+  color: rgba(255, 255, 255, 0.4);
+}
+.dark-product-card .product-name {
+  color: #f3f4f6;
+}
+.dark-product-card .product-price {
+  color: #ff6b6b;
+}
+.dark-product-card .product-price-orig {
+  color: rgba(255,255,255,0.3);
+}
+.dark-product-card .btn-view {
+  background: #ff6b6b;
+}
+.dark-product-card .btn-view:hover {
+  background: #fa5252;
+}
+
+/* Nút Xem Thêm Đẹp Cho Danh Mục Tabs */
+.view-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  width: 100%;
+}
+.btn-view-more-tabs {
+  background: transparent;
+  color: var(--red);
+  border: 2px solid var(--red);
+  border-radius: 8px;
+  padding: 12px 36px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-view-more-tabs:hover {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(215, 0, 24, 0.2);
+}
+
+/* RESPONSIVE CHO CÁC MỤC MỚI */
+@media (max-width: 1024px) {
+  .gundam-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .category-shortcuts-inner {
+    gap: 12px;
+  }
+  .shortcut-item {
+    width: 75px;
+  }
+  .shortcut-icon-wrap {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    border-radius: 14px;
+  }
+  .shortcut-label {
+    font-size: 10.5px;
+  }
+  
+  .featured-slider-inner {
+    flex-direction: column;
+    padding: 0 16px;
+  }
+  .slider-banner {
+    width: 100%;
+    height: 180px;
+    flex-direction: row;
+    align-items: center;
+    padding: 24px;
+  }
+  .slider-banner-btn {
+    width: auto;
+    margin-top: 0;
+  }
+  .slider-arrow {
+    display: none; /* Hide arrows on mobile touch scroll */
+  }
+  .slider-container .product-card {
+    width: 180px;
+  }
+  
+  .gundam-showcase-inner {
+    padding: 0 16px;
+  }
+  .gundam-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .skeleton-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+

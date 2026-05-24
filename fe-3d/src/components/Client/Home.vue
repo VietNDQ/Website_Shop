@@ -7,58 +7,58 @@
     <div class="hero-orb hero-orb-2"></div>
     <div class="hero-inner">
       <div class="hero-content">
-        <div class="hero-eyebrow">Sản Phẩm In 3D Cao Cấp</div>
+        <div class="hero-eyebrow">Cửa Hàng Trực Tuyến Uy Tín</div>
         <h1 class="hero-heading">
-          Khám Phá Sản Phẩm<br />
-          <em>Độc Đáo</em><br />
-          Của Riêng Bạn
+          Mua Bán Mọi Thứ
+          <em>Dễ Dàng</em>
+          Cùng BALAB
         </h1>
         <p class="hero-subtext">
-          Tuyển tập các phôi in 3D FDM và Resin chất lượng cao, từ sa bàn kiến trúc đến robot mecha và các mẫu khớp động. Bề mặt láng mịn, độ nét hoàn hảo dành cho giới đam mê sáng tạo.
+          BALAB - Cửa hàng trực tuyến cung cấp đa dạng sản phẩm chất lượng cao. Khám phá các bộ sưu tập phong phú từ đồ công nghệ, thời trang, phụ kiện đến các món quà tặng trang trí độc đáo được tuyển chọn kỹ lưỡng.
         </p>
         <div class="hero-stats">
           <div>
-            <div class="hero-stat-value">2<span>K</span>+</div>
-            <div class="hero-stat-label">Mẫu phôi in</div>
+            <div class="hero-stat-value">100%</div>
+            <div class="hero-stat-label">Chất lượng đảm bảo</div>
           </div>
           <div>
-            <div class="hero-stat-value">48<span>h</span></div>
-            <div class="hero-stat-label">Giao hỏa tốc</div>
+            <div class="hero-stat-value">Nhanh</div>
+            <div class="hero-stat-label">Giao toàn quốc</div>
           </div>
           <div>
-            <div class="hero-stat-value">4.9<span></span></div>
-            <div class="hero-stat-label">Đánh giá sao</div>
+            <div class="hero-stat-value">24/7</div>
+            <div class="hero-stat-label">Hỗ trợ khách hàng</div>
           </div>
         </div>
       </div>
       
       <div class="hero-visual">
         <div class="model-scene">
-          <div class="hero-badge"><i class="fa-solid fa-fire"></i> Xu Hướng Mới</div>
+          <div class="hero-badge"><i class="fa-solid fa-fire"></i> Săn Deal Hot</div>
           
           <div class="model-float mf-1">
             <div class="model-float-inner">
-              <div class="model-float-img"><i class="fa-solid fa-dungeon"></i></div>
+              <div class="model-float-img"><i class="fa-solid fa-laptop"></i></div>
               <div class="model-float-info">
-                <div class="model-float-name">Lâu Đài Sa Bàn</div>
+                <div class="model-float-name">Đồ Công Nghệ</div>
               </div>
             </div>
           </div>
           
           <div class="model-float mf-2">
             <div class="model-float-inner">
-              <div class="model-float-img"><i class="fa-solid fa-dragon"></i></div>
+              <div class="model-float-img"><i class="fa-solid fa-shirt"></i></div>
               <div class="model-float-info">
-                <div class="model-float-name">Rồng Khớp Động</div>
+                <div class="model-float-name">Thời Trang & Lifestyle</div>
               </div>
             </div>
           </div>
           
           <div class="model-float mf-3">
             <div class="model-float-inner">
-              <div class="model-float-img"><i class="fa-solid fa-robot"></i></div>
+              <div class="model-float-img"><i class="fa-solid fa-gift"></i></div>
               <div class="model-float-info">
-                <div class="model-float-name">Mecha Chibi</div>
+                <div class="model-float-name">Trang Trí & Quà Tặng</div>
               </div>
             </div>
           </div>
@@ -67,27 +67,30 @@
       </div>
     </div>
   </section>
-  <!--  CATEGORIES SECTION  -->
-  <div class="categories-section">
-    <div class="categories-inner">
-      <span class="categories-label">Danh mục sản phẩm:</span>
-      <div class="cat-tabs">
-        <button 
-          class="cat-tab" 
-          :class="{ active: selectedCategoryId === null }"
-          @click="selectCategory(null)"
-        >
-          Tất cả
-        </button>
-        <button 
-          v-for="cat in categories" 
-          :key="cat.id"
-          class="cat-tab"
-          :class="{ active: selectedCategoryId === cat.id }"
-          @click="selectCategory(cat.id)"
-        >
-          {{ cat.ten_danh_muc }}
-        </button>
+  <!-- CATEGORY ICON SHORTCUTS -->
+  <div class="category-shortcuts-section">
+    <div class="category-shortcuts-inner">
+      <div 
+        class="shortcut-item" 
+        :class="{ active: selectedCategoryId === null }"
+        @click="changeTab(null)"
+      >
+        <div class="shortcut-icon-wrap" style="background: linear-gradient(135deg, #0984e3, #00cec9)">
+          <i class="fa-solid fa-border-all"></i>
+        </div>
+        <div class="shortcut-label">Tất cả</div>
+      </div>
+      <div 
+        v-for="cat in categories" 
+        :key="cat.id" 
+        class="shortcut-item" 
+        :class="{ active: selectedCategoryId === cat.id }"
+        @click="changeTab(cat.id)"
+      >
+        <div class="shortcut-icon-wrap" :style="{ background: getCategoryIconInfo(cat.ten_danh_muc).bg }">
+          <i :class="getCategoryIconInfo(cat.ten_danh_muc).icon"></i>
+        </div>
+        <div class="shortcut-label">{{ cat.ten_danh_muc.split(' (')[0] }}</div>
       </div>
     </div>
   </div>
@@ -100,11 +103,18 @@
           <div class="section-eyebrow">Lựa chọn hàng đầu</div>
           <h2 class="section-title">Sản phẩm nổi bật</h2>
         </div>
-        <a href="#" class="btn-view-all" @click.prevent="selectCategory(null)">Xem tất cả →</a>
+        <router-link to="/san-pham" class="btn-view-all">Xem tất cả →</router-link>
       </div>
 
-      <div v-if="loading" class="empty-products">
-        <i class="fa-solid fa-circle-notch fa-spin"></i> &#272;ang t&#7843;i s&#7843;n ph&#7849;m...</div>
+      <!-- Skeleton Loading Grid -->
+      <div v-if="loading" class="skeleton-grid">
+        <div v-for="i in 5" :key="i" class="skeleton-card skeleton-pulse">
+          <div class="skeleton-image"></div>
+          <div class="skeleton-text"></div>
+          <div class="skeleton-text short"></div>
+          <div class="skeleton-text price"></div>
+        </div>
+      </div>
       
       <div v-else-if="products.length > 0">
         <div class="product-grid">
@@ -115,18 +125,18 @@
             @click="goToDetail(product.id)"
           >
             <!-- Badge -->
-            <div class="product-badge badge-new" v-if="product.tinh_trang === 1">{{ '\u0110ang b\u00e1n' }}</div>
-            <div class="product-badge badge-sale" v-else-if="product.tinh_trang === 0">{{ 'H\u1ebft h\u00e0ng' }}</div>
-            <div class="product-badge badge-ltd" v-else-if="product.tinh_trang === 2">{{ '\u1ea8n' }}</div>
+            <div class="product-badge badge-new" v-if="product.tinh_trang === 1">Đang bán</div>
+            <div class="product-badge badge-sale" v-else-if="product.tinh_trang === 0">Hết hàng</div>
+            <div class="product-badge badge-ltd" v-else-if="product.tinh_trang === 2">Ẩn</div>
             
             <div class="product-img-wrap">
               <img :src="getProductImage(product)" :alt="product.ten_san_pham" class="product-img" />
             </div>
             <div class="product-info">
-              <div class="product-brand">{{ product.danh_muc ? product.danh_muc.ten_danh_muc : '\u004d\u00f4 h\u00ecnh' }}</div>
+              <div class="product-brand">{{ product.danh_muc ? product.danh_muc.ten_danh_muc : 'Sản phẩm' }}</div>
               <div class="product-name truncate" :title="product.ten_san_pham">{{ product.ten_san_pham }}</div>
               <div class="product-rating">
-                <span class="stars"></span>
+                <span class="stars">★★★★★</span>
                 <span>(5.0)</span>
               </div>
               <div class="product-footer">
@@ -136,7 +146,7 @@
                     {{ formatPrice(product.gia_goc) }}
                   </span>
                 </div>
-                <button class="btn-view" @click.stop="goToDetail(product.id)">View</button>
+                <button class="btn-view" @click.stop="goToDetail(product.id)">Xem</button>
               </div>
             </div>
           </div>
@@ -168,13 +178,121 @@
             <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
+
+        <!-- View More Link to dedicated Search page -->
+        <div class="view-more-container" v-if="selectedCategoryId">
+          <router-link :to="'/san-pham?id_danh_muc=' + selectedCategoryId" class="btn-view-more-tabs">
+            Xem tất cả {{ getCategoryName(selectedCategoryId) }} →
+          </router-link>
+        </div>
       </div>
       
       <div v-else class="empty-products">
-        {{ 'Kh\u00f4ng t\u00ecm th\u1ea5y s\u1ea3n ph\u1ea9m n\u00e0o ph\u00f9 h\u1ee3p.' }}
+        Không tìm thấy sản phẩm nào phù hợp.
       </div>
     </div>
   </div>
+
+  <!-- FEATURED CATEGORY SLIDER (ANIME) -->
+  <div class="featured-slider-section" v-if="animeProducts.length > 0">
+    <div class="featured-slider-inner">
+      
+      <!-- Banner -->
+      <div class="slider-banner">
+        <div class="slider-banner-top">
+          <span class="slider-banner-tag">HOT TREND</span>
+          <h3 class="slider-banner-title">Mô Hình<br/><em>Anime & Figure</em></h3>
+          <p class="slider-banner-desc">Bộ sưu tập mô hình nhân vật hoạt hình Anime, Figure sắc nét, chất lượng cao cực kỳ được săn đón.</p>
+        </div>
+        <router-link to="/san-pham?id_danh_muc=1" class="slider-banner-btn">Xem Ngay</router-link>
+      </div>
+
+      <!-- Slider Main -->
+      <div class="slider-main">
+        <!-- Left Arrow -->
+        <button class="slider-arrow left" @click="scrollSlider('left')">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <!-- Container -->
+        <div class="slider-container" ref="animeSlider">
+          <div 
+            v-for="product in animeProducts" 
+            :key="product.id" 
+            class="product-card"
+            @click="goToDetail(product.id)"
+          >
+            <div class="product-badge badge-new" v-if="product.tinh_trang === 1">Mới</div>
+            <div class="product-img-wrap">
+              <img :src="getProductImage(product)" :alt="product.ten_san_pham" class="product-img" />
+            </div>
+            <div class="product-info">
+              <div class="product-brand">Anime & Figure</div>
+              <div class="product-name truncate" :title="product.ten_san_pham">{{ product.ten_san_pham }}</div>
+              <div class="product-rating">
+                <span class="stars">★★★★★</span>
+                <span>(5.0)</span>
+              </div>
+              <div class="product-footer">
+                <div class="product-price-group">
+                  <span class="product-price">{{ formatPrice(product.gia_co_ban) }}</span>
+                </div>
+                <button class="btn-view" @click.stop="goToDetail(product.id)">Xem</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Arrow -->
+        <button class="slider-arrow right" @click="scrollSlider('right')">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GUNDAM DARK SHOWCASE SECTION -->
+  <div class="gundam-showcase-section" v-if="gundamProducts.length > 0">
+    <div class="gundam-showcase-inner">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <div class="section-eyebrow">Bộ sưu tập robot đỉnh cao</div>
+          <h2 class="section-title">Mô Hình Lắp Ráp Gundam</h2>
+        </div>
+        <router-link to="/san-pham?id_danh_muc=2" class="btn-view-all">Xem tất cả →</router-link>
+      </div>
+
+      <div class="gundam-grid">
+        <div 
+          v-for="product in gundamProducts" 
+          :key="product.id" 
+          class="dark-product-card"
+          @click="goToDetail(product.id)"
+        >
+          <div class="product-badge badge-sale">Hot Deal</div>
+          <div class="product-img-wrap">
+            <img :src="getProductImage(product)" :alt="product.ten_san_pham" class="product-img" />
+          </div>
+          <div class="product-info">
+            <div class="product-brand">Gundam / Plamo</div>
+            <div class="product-name truncate" :title="product.ten_san_pham">{{ product.ten_san_pham }}</div>
+            <div class="product-rating">
+              <span class="stars">★★★★★</span>
+              <span>(5.0)</span>
+            </div>
+            <div class="product-footer">
+              <div class="product-price-group">
+                <span class="product-price">{{ formatPrice(product.gia_co_ban) }}</span>
+              </div>
+              <button class="btn-view" @click.stop="goToDetail(product.id)">Xem</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!--  FEATURES  -->
 <div class="features-bg">
     <div style="max-width: 1280px; margin: 0 auto">
@@ -183,19 +301,9 @@
         <div class="feature-item">
           <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-truck-fast"></i></div>
           <div>
-            <div class="feature-title">Miễn Phí Giao Hàng</div>
+            <div class="feature-title">Giao Hàng Nhanh Chóng</div>
             <div class="feature-desc">
-              Áp dụng cho đơn hàng từ 500.000 ₫. Hỗ trợ giao hỏa tốc nội thành.
-            </div>
-          </div>
-        </div>
-        
-        <div class="feature-item">
-          <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-box-open"></i></div>
-          <div>
-            <div class="feature-title">Đóng Gói An Toàn</div>
-            <div class="feature-desc">
-              Bọc chống sốc kỹ lưỡng, đảm bảo phôi in không gãy vỡ.
+              Hỗ trợ giao hàng trên toàn quốc. Đóng gói cẩn thận, an toàn đến tận tay bạn.
             </div>
           </div>
         </div>
@@ -203,9 +311,19 @@
         <div class="feature-item">
           <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
           <div>
-            <div class="feature-title">Chất Lượng Đảm Bảo</div>
+            <div class="feature-title">Cam Kết Chất Lượng</div>
             <div class="feature-desc">
-              Sử dụng nhựa in theo yêu cầu, đảm bảo độ bền và tính thẩm mỹ cao.
+              Đảm bảo chất lượng sản phẩm như mô tả, hoàn tiền hoặc đổi mới nếu có lỗi từ sản xuất.
+            </div>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-medal"></i></div>
+          <div>
+            <div class="feature-title">Uy Tín Hàng Đầu</div>
+            <div class="feature-desc">
+              Mỗi sản phẩm đều được kiểm tra kỹ lưỡng trước khi giao đến tay khách hàng.
             </div>
           </div>
         </div>
@@ -213,9 +331,9 @@
         <div class="feature-item">
           <div style="margin-top: 10px;" class="feature-icon"><i class="fa-solid fa-rotate-left"></i></div>
           <div>
-            <div class="feature-title">Hỗ Trợ Đổi Trả</div>
+            <div class="feature-title">Đổi Trả Dễ Dàng</div>
             <div class="feature-desc">
-              Đổi mới hoặc in lại trong 7 ngày nếu có lỗi cong vênh từ xưởng.
+              Chính sách đổi trả linh hoạt lên tới 7 ngày nếu sản phẩm không đúng yêu cầu.
             </div>
           </div>
         </div>
@@ -227,27 +345,27 @@
  <div class="banner-strip">
     <div class="banner-strip-inner">
       <div class="banner-content-left">
-        <span class="banner-tag">Bộ Sưu Tập In 3D</span>
-        <h2 class="banner-title">Nghệ Thuật<br /><em>In 3D</em><br />Đỉnh Cao</h2>
+        <span class="banner-tag">Ưu Đãi Đặc Biệt</span>
+        <h2 class="banner-title">Mua Sắm Ngay<br /><em>Nhận Nhiều</em><br />Ưu Đãi Lớn</h2>
         <p class="banner-desc">
-          Khám phá các mẫu mô hình được chế tác bằng công nghệ in FDM và Resin tiên tiến. Bề mặt láng mịn, chi tiết siêu nét, hoàn hảo để trưng bày hoặc tự tay sơn phết sáng tạo.
+          Khám phá những bộ sưu tập sản phẩm mới nhất được cập nhật liên tục mỗi tuần. Cam kết chất lượng, bảo hành chu đáo và nhiều chương trình ưu đãi độc quyền dành riêng cho bạn.
         </p>
-        <button class="btn-banner">Khám Phá Ngay</button>
+        <button class="btn-banner" @click="$router.push('/san-pham')">Mua Sắm Ngay</button>
       </div>
       <div class="banner-visual">
         <div class="banner-deco"></div>
         <div class="banner-deco banner-deco-2"></div>
         <div class="banner-model">
-          <span class="banner-model-emoji"><i class="fa-solid fa-dragon"></i></span>
-          <div class="banner-model-name">Rồng Khớp Động</div>
+          <span class="banner-model-emoji"><i class="fa-solid fa-shirt"></i></span>
+          <div class="banner-model-name">Thời Trang</div>
         </div>
         <div class="banner-model">
-          <span class="banner-model-emoji"><i class="fa-solid fa-robot"></i></span>
-          <div class="banner-model-name">Mecha Gundam</div>
+          <span class="banner-model-emoji"><i class="fa-solid fa-mobile-button"></i></span>
+          <div class="banner-model-name">Điện Tử</div>
         </div>
         <div class="banner-model">
-          <span class="banner-model-emoji"><i class="fa-solid fa-cube"></i></span>
-          <div class="banner-model-name">Sa Bàn Diorama</div>
+          <span class="banner-model-emoji"><i class="fa-solid fa-couch"></i></span>
+          <div class="banner-model-name">Đồ Gia Dụng</div>
         </div>
       </div>
     </div>
@@ -275,11 +393,17 @@ export default {
       showSuggestions: false,
       suggestDebounceTimer: null,
       suggestCache: {},
+      animeProducts: [],
+      loadingAnimeProducts: false,
+      gundamProducts: [],
+      loadingGundamProducts: false,
     };
   },
   mounted() {
     this.fetchCategories();
     this.applyRouteFilters();
+    this.fetchAnimeProducts();
+    this.fetchGundamProducts();
   },
   beforeUnmount() {
     if (this.suggestDebounceTimer) clearTimeout(this.suggestDebounceTimer);
@@ -470,6 +594,76 @@ export default {
           this.$router.push("/product/" + productOrId);
         }
       }
+    },
+    async fetchAnimeProducts() {
+      this.loadingAnimeProducts = true;
+      try {
+        const res = await axios.get("/api/san-pham", {
+          params: { id_danh_muc: 1, per_page: 8 }
+        });
+        this.animeProducts = res.data?.data || [];
+      } catch (err) {
+        console.error("Lỗi khi tải sản phẩm Anime:", err);
+      } finally {
+        this.loadingAnimeProducts = false;
+      }
+    },
+    async fetchGundamProducts() {
+      this.loadingGundamProducts = true;
+      try {
+        const res = await axios.get("/api/san-pham", {
+          params: { id_danh_muc: 2, per_page: 5 }
+        });
+        this.gundamProducts = res.data?.data || [];
+      } catch (err) {
+        console.error("Lỗi khi tải sản phẩm Gundam:", err);
+      } finally {
+        this.loadingGundamProducts = false;
+      }
+    },
+    scrollSlider(direction) {
+      const container = this.$refs.animeSlider;
+      if (container) {
+        const scrollAmount = 320;
+        if (direction === 'left') {
+          container.scrollLeft -= scrollAmount;
+        } else {
+          container.scrollLeft += scrollAmount;
+        }
+      }
+    },
+    changeTab(id) {
+      this.selectedCategoryId = id;
+      this.fetchProducts(1);
+    },
+    getCategoryIconInfo(catName) {
+      const name = catName.toLowerCase();
+      if (name.includes('anime') || name.includes('figure')) {
+        return { icon: 'fa-solid fa-mask', bg: 'linear-gradient(135deg, #ff9f43, #ff5252)' };
+      }
+      if (name.includes('gundam') || name.includes('lắp ráp') || name.includes('plamo')) {
+        return { icon: 'fa-solid fa-robot', bg: 'linear-gradient(135deg, #a55eea, #fd79a8)' };
+      }
+      if (name.includes('xe') || name.includes('quân sự')) {
+        return { icon: 'fa-solid fa-plane-up', bg: 'linear-gradient(135deg, #0984e3, #00cec9)' };
+      }
+      if (name.includes('in 3d') || name.includes('3d')) {
+        return { icon: 'fa-solid fa-cubes', bg: 'linear-gradient(135deg, #20bf6b, #05c46b)' };
+      }
+      if (name.includes('kiến trúc') || name.includes('diorama') || name.includes('sa bàn')) {
+        return { icon: 'fa-solid fa-monument', bg: 'linear-gradient(135deg, #f1c40f, #e67e22)' };
+      }
+      if (name.includes('dụng cụ') && name.includes('cắt')) {
+        return { icon: 'fa-solid fa-screwdriver-wrench', bg: 'linear-gradient(135deg, #3f51b5, #9c27b0)' };
+      }
+      if (name.includes('sơn') || name.includes('hóa chất')) {
+        return { icon: 'fa-solid fa-palette', bg: 'linear-gradient(135deg, #e91e63, #ff6090)' };
+      }
+      return { icon: 'fa-solid fa-box-open', bg: 'linear-gradient(135deg, #607d8b, #cfd8dc)' };
+    },
+    getCategoryName(id) {
+      const cat = this.categories.find(x => x.id === id);
+      return cat ? cat.ten_danh_muc : 'sản phẩm';
     },
   },
 };

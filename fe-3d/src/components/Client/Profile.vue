@@ -1519,6 +1519,13 @@ export default {
   beforeUnmount() {
     document.removeEventListener("click", this.closeSearchDropdowns);
   },
+  watch: {
+    '$route.query.tab'(newTab) {
+      if (newTab) {
+        this.activeTab = newTab;
+      }
+    }
+  },
   methods: {
     getProductName(detail) {
       const name = detail.ten_bien_the_luc_mua || '';

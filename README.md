@@ -22,7 +22,7 @@ Dự án tích hợp đầy đủ quy trình bán hàng khép kín, quản trị
 Dự án được phân chia rõ ràng thành các phân hệ riêng biệt để dễ dàng phát triển và triển khai:
 
 ```text
-web-mohinh/
+webite-shop/
 ├── be-3d/                            # PHÂN HỆ BACKEND (Laravel 12 API)
 │   ├── app/                          # Core Logic (Models, Controllers, Requests, Middlewares)
 │   │   ├── Http/

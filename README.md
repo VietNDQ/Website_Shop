@@ -1,4 +1,4 @@
-# 🧸 Hệ Thống Thương Mại Điện Tử Shop BALAB
+# 🛒 Hệ Thống Thương Mại Điện Tử Shop BALAB
 
 > ### 🌐 TRẢI NGHIỆM HỆ THỐNG
 > Hệ thống cửa hàng BALAB vận hành tại địa chỉ:
@@ -11,7 +11,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg?style=for-the-badge&logo=docker)](https://www.docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-Hệ thống bán hàng trực tuyến chuyên nghiệp chuyên cung cấp các sản phẩm Shop nhân vật (Anime Figures) và Shop 3D, được phát triển với kiến trúc tách biệt hoàn toàn giữa **Backend API** (Laravel 12) và **Frontend SPA** (Vue 3, Vite, Pinia).
+Hệ thống bán hàng trực tuyến chuyên nghiệp cung cấp đa dạng các mặt hàng thương mại điện tử, được phát triển với kiến trúc tách biệt hoàn toàn giữa **Backend API** (Laravel 12) và **Frontend SPA** (Vue 3, Vite, Pinia).
 
 Dự án tích hợp đầy đủ quy trình bán hàng khép kín, quản trị bán hàng thông minh (Admin Dashboard), đồng bộ dữ liệu thời gian thực (Pusher), hệ thống cảnh báo lỗi tự động qua Telegram (Telegram Alert), và các tiêu chuẩn bảo mật nghiêm ngặt nhất.
 

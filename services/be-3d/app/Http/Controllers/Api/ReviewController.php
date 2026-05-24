@@ -115,9 +115,8 @@ class ReviewController extends Controller
             // Xử lý ảnh đính kèm
             if ($request->hasFile('anh_danh_gia')) {
                 foreach ($request->file('anh_danh_gia') as $image) {
-                    $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                    $image->move(public_path('uploads/reviews'), $fileName);
-                    $imagePath = 'uploads/reviews/' . $fileName;
+                    $path = $image->store('uploads/reviews', 'public');
+                    $imagePath = '/storage/' . $path;
 
                     AnhDanhGia::create([
                         'id_danh_gia' => $review->id,
@@ -204,6 +203,12 @@ class ReviewController extends Controller
                 'body' => $rv->binh_luan,
                 'variant' => $variantName,
                 'images' => $rv->anhs->pluck('duong_dan_anh')->map(function ($path) {
+                    if (str_starts_with($path, '/')) {
+                        return $path;
+                    }
+                    if (str_starts_with($path, 'storage/')) {
+                        return '/' . $path;
+                    }
                     return '/' . $path;
                 }),
                 'reply' => $rv->phan_hoi_admin,
@@ -288,6 +293,12 @@ class ReviewController extends Controller
                 'status' => $rv->trang_thai,
                 'statusLabel' => $statusLabels[$rv->trang_thai] ?? 'Không xác định',
                 'images' => $rv->anhs->pluck('duong_dan_anh')->map(function ($path) {
+                    if (str_starts_with($path, '/')) {
+                        return $path;
+                    }
+                    if (str_starts_with($path, 'storage/')) {
+                        return '/' . $path;
+                    }
                     return '/' . $path;
                 }),
                 'reply' => $rv->phan_hoi_admin,

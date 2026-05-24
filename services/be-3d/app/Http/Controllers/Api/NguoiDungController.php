@@ -162,7 +162,7 @@ class NguoiDungController extends Controller
                 'dob' => $dob,
                 'address' => $address,
                 'bio' => $bio,
-                'avatar' => $avatar ? asset($avatar) : null,
+                'avatar' => $avatar ? (str_starts_with($avatar, 'http') ? $avatar : '/' . ltrim($avatar, '/')) : null,
                 'roleName' => $roleName,
                 'google_id' => $user->google_id,
                 'zalo_id' => $user->zalo_id,
@@ -203,9 +203,8 @@ class NguoiDungController extends Controller
 
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('uploads/avatars'), $fileName);
-            $avatarPath = 'uploads/avatars/' . $fileName;
+            $path = $file->store('uploads/avatars', 'public');
+            $avatarPath = '/storage/' . $path;
 
             if (Schema::hasColumn('nguoi_dung', 'anh_dai_dien')) {
                 $updateData['anh_dai_dien'] = $avatarPath;
